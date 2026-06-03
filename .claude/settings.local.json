@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git --version)",
+      "Bash(echo \"git: $\\(git --version 2>&1\\)\")",
+      "Bash(gh --version)",
+      "Bash(echo \"gh: $\\(gh --version 2>&1)",
+      "Bash(git config *)",
+      "Bash(echo \"user.name: $\\(git config --global user.name\\)\")",
+      "Bash(echo \"user.email: $\\(git config --global user.email\\)\")",
+      "Bash(git ls-remote *)",
+      "Bash(git init *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Bash(git reset *)",
+      "Bash(grep -v -E '^\\\\.$|^\\\\.\\\\.$|^\\\\.claude$|^\\\\.git$')",
+      "Bash(git checkout *)",
+      "Bash(git commit -q -m ' *)",
+      "Bash(git push *)"
+    ]
+  }
+}
