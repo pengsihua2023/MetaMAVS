@@ -1,12 +1,12 @@
-# MetaMAVS Surveillance Report: sapelo2_gottcha2_smoke
+# MetaMAVS Surveillance Report: sapelo2_genome72
 
 > _Research-grade metagenomic virus surveillance. Signals below are **detected sequence signals**, not confirmed infections. Confirmatory testing is required before any public-health action._
 
 ## 1. Project Summary
 
 - **Project:** MetaMAVS
-- **Run name:** sapelo2_gottcha2_smoke
-- **Run id:** run_20260604_172046
+- **Run name:** sapelo2_genome72
+- **Run id:** run_20260604_190703
 - **Mode:** execution
 - **Overall risk:** Low
 
@@ -24,7 +24,7 @@
 
 | Sample | Mean Q | Total reads | Adapter % | QC |
 | --- | --- | --- | --- | --- |
-| llnl_66ce4dde | 36.0 | 1500000 | 2.0 | pass |
+| Genome_72 | 36.0 | 1500000 | 2.0 | pass |
 
 ## 4. Host Read Removal
 
@@ -33,17 +33,25 @@
 
 | Sample | Host read % | Non-host reads |
 | --- | --- | --- |
-| llnl_66ce4dde | 85.0 | 300000 |
+| Genome_72 | 85.0 | 300000 |
 
 ## 5. Viral Detection & Taxonomy
 
-- **Detection tools:** 
-- **Candidate taxa:** 0
-- **Flagged (phage/FP/low-conf):** 0
+- **Detection tools:** gottcha2
+- **Candidate taxa:** 20
+- **Flagged (phage/FP/low-conf):** 8
 - **Phage taxa:** 0
-- **Pathogen-like taxa:** 0
+- **Pathogen-like taxa:** 12
 
 ## 6. Abundance Trends
+
+| Taxon | Mean RPM | First RPM | Last RPM | % change | Trend |
+| --- | --- | --- | --- | --- | --- |
+| Obolenskvirus AP22 | 120.67 | 120.67 | 120.67 | 0.0 | stable |
+| Phikzvirus phiKZ | 103.33 | 103.33 | 103.33 | 0.0 | stable |
+| Human mastadenovirus F | 77.33 | 77.33 | 77.33 | 0.0 | stable |
+| Pepper mild mottle virus | 44.0 | 44.0 | 44.0 | 0.0 | stable |
+| Severe acute respiratory syndrome-related coronavirus | 34.67 | 34.67 | 34.67 | 0.0 | stable |
 
 ## 7. Novel / Divergent Virus Candidates
 
@@ -52,6 +60,14 @@ _No novel candidates above threshold._
 ## 8. Epidemiological Risk Assessment
 
 - **Overall risk:** Low
+
+| Taxon | Risk | Reads | Trend | Reasons |
+| --- | --- | --- | --- | --- |
+| Obolenskvirus AP22 | Low | 181 | stable | low/uncertain signal |
+| Phikzvirus phiKZ | Low | 155 | stable | low/uncertain signal |
+| Human mastadenovirus F | Low | 116 | stable | low/uncertain signal |
+| Pepper mild mottle virus | Low | 66 | stable | low/uncertain signal |
+| Severe acute respiratory syndrome-related coronavirus | Low | 52 | stable | low/uncertain signal |
 
 ## 9. Human Review
 
@@ -67,14 +83,14 @@ _No novel candidates above threshold._
 ## 11. Warnings
 
 - No host_reference configured; using placeholder path in generated commands
-- No viral taxa detected (parsed real tool output) — surveillance signal is negative
+- 8 taxon(a) flagged as likely false positives / phage / low-confidence
 
 ## 12. Reproducibility
 
 - **MetaMAVS version:** 0.1.0
 - **Config:** configs/sapelo2_config.yaml
-- **Run directory:** reports/sapelo2_gottcha2_smoke
-- **Generated (UTC):** 2026-06-04T17:26:00Z
+- **Run directory:** reports/sapelo2_genome72
+- **Generated (UTC):** 2026-06-04T19:13:19Z
 
 
 ---

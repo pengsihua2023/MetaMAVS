@@ -7,6 +7,7 @@ from typing import Any
 
 import pandas as pd
 
+from ..pathogens import match_high_risk
 from ..routing import should_request_review
 from ..state import MetaMAVSState
 from ..utils.file_utils import read_csv_safe, write_csv, write_json
@@ -17,16 +18,18 @@ logger = get_logger("agents.risk")
 _RISK_ORDER = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3}
 
 
-def _assess_taxon(name, reads, is_phage, flagged, trend, high_risk_pathogens):
+def _assess_taxon(name, taxid, reads, is_phage, flagged, trend, high_risk_pathogens):
     """Return (risk_level, reasons) for a single taxon.
 
     Deliberately conservative: weak / phage / flagged signals stay Low, and a
     known pathogen is only escalated to Critical when it is *also* sharply
-    increasing -- avoiding over-claiming from metagenomic reads alone.
+    increasing -- avoiding over-claiming from metagenomic reads alone. High-risk
+    matching uses taxid + name aliases so full taxonomic names are recognised.
     """
 
     reasons: list[str] = []
-    is_known_pathogen = any(p.lower() in name.lower() for p in high_risk_pathogens)
+    matched = match_high_risk(name, taxid, high_risk_pathogens)
+    is_known_pathogen = matched is not None
 
     if is_phage:
         return "Low", ["environmental_phage (not a human/animal pathogen)"]
@@ -36,7 +39,9 @@ def _assess_taxon(name, reads, is_phage, flagged, trend, high_risk_pathogens):
     level = "Low"
     if is_known_pathogen:
         level = "High"
-        reasons.append("matches configured high-risk pathogen list")
+        reasons.append(f"matches high-risk pathogen: {matched}")
+        if reads < 50:
+            reasons.append("low read count — recommend confirmatory testing")
     elif reads >= 500:
         level = "Medium"
         reasons.append("substantial read support for a non-phage virus")
@@ -75,6 +80,7 @@ def risk_assessment_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             name = str(r["taxon_name"])
             level, reasons = _assess_taxon(
                 name,
+                int(r.get("taxid", 0) or 0),
                 int(r.get("total_reads", 0) or 0),
                 bool(r.get("is_phage", False)),
                 bool(r.get("false_positive_flag", False)),
