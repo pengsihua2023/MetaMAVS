@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<title>MetaMAVS — run_20260604_165318</title>
+<title>MetaMAVS — run_20260604_170534</title>
 <style>
 body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.5}
 h1,h2,h3{color:#0b3d66}
@@ -20,9 +20,9 @@ hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}
 <ul>
 <li><strong>Project:</strong> MetaMAVS</li>
 <li><strong>Run name:</strong> sapelo2_gottcha2_smoke</li>
-<li><strong>Run id:</strong> run_20260604_165318</li>
+<li><strong>Run id:</strong> run_20260604_170534</li>
 <li><strong>Mode:</strong> execution</li>
-<li><strong>Overall risk:</strong> Medium</li>
+<li><strong>Overall risk:</strong> High</li>
 </ul>
 <h2>2. Sample Summary</h2>
 <ul>
@@ -60,10 +60,10 @@ hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}
 <h2>5. Viral Detection &amp; Taxonomy</h2>
 <ul>
 <li><strong>Detection tools:</strong> gottcha2</li>
-<li><strong>Candidate taxa:</strong> 357</li>
-<li><strong>Flagged (phage/FP/low-conf):</strong> 0</li>
-<li><strong>Phage taxa:</strong> 0</li>
-<li><strong>Pathogen-like taxa:</strong> 357</li>
+<li><strong>Candidate taxa:</strong> 7</li>
+<li><strong>Flagged (phage/FP/low-conf):</strong> 4</li>
+<li><strong>Phage taxa:</strong> 2</li>
+<li><strong>Pathogen-like taxa:</strong> 3</li>
 </ul>
 <h2>6. Abundance Trends</h2>
 <table><thead><tr>
@@ -74,17 +74,25 @@ hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}
 <th>% change</th>
 <th>Trend</th>
 </tr></thead><tbody>
-<tr><td>Jeotgalibaca porci</td><td>145391.33</td><td>145391.33</td><td>145391.33</td><td>0.0</td><td>stable</td></tr>
-<tr><td>Microvirga ossetica</td><td>124979.33</td><td>124979.33</td><td>124979.33</td><td>0.0</td><td>stable</td></tr>
-<tr><td>Caulifigura coniformis</td><td>114712.0</td><td>114712.0</td><td>114712.0</td><td>0.0</td><td>stable</td></tr>
-<tr><td>Tolumonas auensis</td><td>106122.67</td><td>106122.67</td><td>106122.67</td><td>0.0</td><td>stable</td></tr>
-<tr><td>Pseudazoarcus pumilus</td><td>96600.0</td><td>96600.0</td><td>96600.0</td><td>0.0</td><td>stable</td></tr>
+<tr><td>SARS-CoV-2</td><td>1000.0</td><td>1000.0</td><td>1000.0</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Influenza A virus</td><td>480.0</td><td>480.0</td><td>480.0</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Norovirus</td><td>293.33</td><td>293.33</td><td>293.33</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Escherichia phage T4</td><td>190.0</td><td>190.0</td><td>190.0</td><td>0.0</td><td>stable</td></tr>
+<tr><td>uncultured crAssphage</td><td>120.0</td><td>120.0</td><td>120.0</td><td>0.0</td><td>stable</td></tr>
 </tbody></table>
 <h2>7. Novel / Divergent Virus Candidates</h2>
-<p>_No novel candidates above threshold._</p>
+<table><thead><tr>
+<th>Candidate</th>
+<th>Putative taxon</th>
+<th>Reads</th>
+<th>Confidence</th>
+<th>Evidence</th>
+</tr></thead><tbody>
+<tr><td>NVC_001</td><td>unclassified divergent RNA virus</td><td>4</td><td>0.42</td><td>unclassified + divergent (low classification confidence)</td></tr>
+</tbody></table>
 <h2>8. Epidemiological Risk Assessment</h2>
 <ul>
-<li><strong>Overall risk:</strong> Medium</li>
+<li><strong>Overall risk:</strong> High</li>
 </ul>
 <table><thead><tr>
 <th>Taxon</th>
@@ -93,33 +101,38 @@ hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}
 <th>Trend</th>
 <th>Reasons</th>
 </tr></thead><tbody>
-<tr><td>Jeotgalibaca porci</td><td>Medium</td><td>218087</td><td>stable</td><td>substantial read support for a non-phage virus</td></tr>
-<tr><td>Microvirga ossetica</td><td>Medium</td><td>187469</td><td>stable</td><td>substantial read support for a non-phage virus</td></tr>
-<tr><td>Caulifigura coniformis</td><td>Medium</td><td>172068</td><td>stable</td><td>substantial read support for a non-phage virus</td></tr>
-<tr><td>Tolumonas auensis</td><td>Medium</td><td>159184</td><td>stable</td><td>substantial read support for a non-phage virus</td></tr>
-<tr><td>Pseudazoarcus pumilus</td><td>Medium</td><td>144900</td><td>stable</td><td>substantial read support for a non-phage virus</td></tr>
+<tr><td>SARS-CoV-2</td><td>High</td><td>1500</td><td>stable</td><td>matches configured high-risk pathogen list</td></tr>
+<tr><td>Influenza A virus</td><td>High</td><td>720</td><td>stable</td><td>matches configured high-risk pathogen list</td></tr>
+<tr><td>Norovirus</td><td>High</td><td>440</td><td>stable</td><td>matches configured high-risk pathogen list</td></tr>
+<tr><td>unclassified divergent RNA virus</td><td>Medium</td><td>4</td><td>unknown</td><td>novel/divergent candidate; requires confirmatory characterisation</td></tr>
+<tr><td>Escherichia phage T4</td><td>Low</td><td>285</td><td>stable</td><td>environmental_phage (not a human/animal pathogen)</td></tr>
 </tbody></table>
 <h2>9. Human Review</h2>
 <ul>
-<li><strong>Review required:</strong> False</li>
-<li><strong>Decision:</strong> None</li>
-<li><strong>Approved for report:</strong> False</li>
-<li><strong>Reviewer notes:</strong> None</li>
+<li><strong>Review required:</strong> True</li>
+<li><strong>Decision:</strong> approved_simulated</li>
+<li><strong>Approved for report:</strong> True</li>
+<li><strong>Reviewer notes:</strong> Auto-approved in dry-run/non-interactive mode. Triggers: overall risk = High; 1 novel candidate(s).</li>
 </ul>
 <h2>10. Recommended Follow-up Actions</h2>
 <ul>
-<li>Continue routine surveillance; no high-risk confirmatory testing indicated</li>
+<li>Confirm SARS-CoV-2 (High) with targeted RT-qPCR / amplicon sequencing</li>
+<li>Confirm Influenza A virus (High) with targeted RT-qPCR / amplicon sequencing</li>
+<li>Confirm Norovirus (High) with targeted RT-qPCR / amplicon sequencing</li>
+<li>Manually curate novel/divergent candidates; verify contigs with CheckV and phylogenetics</li>
 </ul>
 <h2>11. Warnings</h2>
 <ul>
 <li>No host_reference configured; using placeholder path in generated commands</li>
+<li>4 taxon(a) flagged as likely false positives / phage / low-confidence</li>
+<li>1 novel/divergent viral candidate(s) require expert review</li>
 </ul>
 <h2>12. Reproducibility</h2>
 <ul>
 <li><strong>MetaMAVS version:</strong> 0.1.0</li>
 <li><strong>Config:</strong> configs/sapelo2_config.yaml</li>
 <li><strong>Run directory:</strong> reports/sapelo2_gottcha2_smoke</li>
-<li><strong>Generated (UTC):</strong> 2026-06-04T17:00:33Z</li>
+<li><strong>Generated (UTC):</strong> 2026-06-04T17:10:48Z</li>
 </ul>
 <hr/>
 <p>_Generated by MetaMAVS. Detected signals require confirmatory testing._</p>

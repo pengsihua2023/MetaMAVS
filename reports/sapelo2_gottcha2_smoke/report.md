@@ -6,9 +6,9 @@
 
 - **Project:** MetaMAVS
 - **Run name:** sapelo2_gottcha2_smoke
-- **Run id:** run_20260604_165318
+- **Run id:** run_20260604_170534
 - **Mode:** execution
-- **Overall risk:** Medium
+- **Overall risk:** High
 
 ## 2. Sample Summary
 
@@ -38,58 +38,65 @@
 ## 5. Viral Detection & Taxonomy
 
 - **Detection tools:** gottcha2
-- **Candidate taxa:** 357
-- **Flagged (phage/FP/low-conf):** 0
-- **Phage taxa:** 0
-- **Pathogen-like taxa:** 357
+- **Candidate taxa:** 7
+- **Flagged (phage/FP/low-conf):** 4
+- **Phage taxa:** 2
+- **Pathogen-like taxa:** 3
 
 ## 6. Abundance Trends
 
 | Taxon | Mean RPM | First RPM | Last RPM | % change | Trend |
 | --- | --- | --- | --- | --- | --- |
-| Jeotgalibaca porci | 145391.33 | 145391.33 | 145391.33 | 0.0 | stable |
-| Microvirga ossetica | 124979.33 | 124979.33 | 124979.33 | 0.0 | stable |
-| Caulifigura coniformis | 114712.0 | 114712.0 | 114712.0 | 0.0 | stable |
-| Tolumonas auensis | 106122.67 | 106122.67 | 106122.67 | 0.0 | stable |
-| Pseudazoarcus pumilus | 96600.0 | 96600.0 | 96600.0 | 0.0 | stable |
+| SARS-CoV-2 | 1000.0 | 1000.0 | 1000.0 | 0.0 | stable |
+| Influenza A virus | 480.0 | 480.0 | 480.0 | 0.0 | stable |
+| Norovirus | 293.33 | 293.33 | 293.33 | 0.0 | stable |
+| Escherichia phage T4 | 190.0 | 190.0 | 190.0 | 0.0 | stable |
+| uncultured crAssphage | 120.0 | 120.0 | 120.0 | 0.0 | stable |
 
 ## 7. Novel / Divergent Virus Candidates
 
-_No novel candidates above threshold._
+| Candidate | Putative taxon | Reads | Confidence | Evidence |
+| --- | --- | --- | --- | --- |
+| NVC_001 | unclassified divergent RNA virus | 4 | 0.42 | unclassified + divergent (low classification confidence) |
 
 ## 8. Epidemiological Risk Assessment
 
-- **Overall risk:** Medium
+- **Overall risk:** High
 
 | Taxon | Risk | Reads | Trend | Reasons |
 | --- | --- | --- | --- | --- |
-| Jeotgalibaca porci | Medium | 218087 | stable | substantial read support for a non-phage virus |
-| Microvirga ossetica | Medium | 187469 | stable | substantial read support for a non-phage virus |
-| Caulifigura coniformis | Medium | 172068 | stable | substantial read support for a non-phage virus |
-| Tolumonas auensis | Medium | 159184 | stable | substantial read support for a non-phage virus |
-| Pseudazoarcus pumilus | Medium | 144900 | stable | substantial read support for a non-phage virus |
+| SARS-CoV-2 | High | 1500 | stable | matches configured high-risk pathogen list |
+| Influenza A virus | High | 720 | stable | matches configured high-risk pathogen list |
+| Norovirus | High | 440 | stable | matches configured high-risk pathogen list |
+| unclassified divergent RNA virus | Medium | 4 | unknown | novel/divergent candidate; requires confirmatory characterisation |
+| Escherichia phage T4 | Low | 285 | stable | environmental_phage (not a human/animal pathogen) |
 
 ## 9. Human Review
 
-- **Review required:** False
-- **Decision:** None
-- **Approved for report:** False
-- **Reviewer notes:** None
+- **Review required:** True
+- **Decision:** approved_simulated
+- **Approved for report:** True
+- **Reviewer notes:** Auto-approved in dry-run/non-interactive mode. Triggers: overall risk = High; 1 novel candidate(s).
 
 ## 10. Recommended Follow-up Actions
 
-- Continue routine surveillance; no high-risk confirmatory testing indicated
+- Confirm SARS-CoV-2 (High) with targeted RT-qPCR / amplicon sequencing
+- Confirm Influenza A virus (High) with targeted RT-qPCR / amplicon sequencing
+- Confirm Norovirus (High) with targeted RT-qPCR / amplicon sequencing
+- Manually curate novel/divergent candidates; verify contigs with CheckV and phylogenetics
 
 ## 11. Warnings
 
 - No host_reference configured; using placeholder path in generated commands
+- 4 taxon(a) flagged as likely false positives / phage / low-confidence
+- 1 novel/divergent viral candidate(s) require expert review
 
 ## 12. Reproducibility
 
 - **MetaMAVS version:** 0.1.0
 - **Config:** configs/sapelo2_config.yaml
 - **Run directory:** reports/sapelo2_gottcha2_smoke
-- **Generated (UTC):** 2026-06-04T17:00:33Z
+- **Generated (UTC):** 2026-06-04T17:10:48Z
 
 
 ---

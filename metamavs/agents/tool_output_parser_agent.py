@@ -10,10 +10,15 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from ..parsers import PARSERS
 from ..state import MetaMAVSState
 from ..utils.file_utils import write_csv, write_json
 from ..utils.logging_utils import get_logger
+
+_RAW_COLS = ["sample_id", "taxon_name", "family", "taxid", "genome_length_kb", "reads", "confidence", "tool"]
+_CAND_COLS = ["taxon_name", "family", "taxid", "genome_length_kb", "total_reads", "max_confidence", "n_samples"]
 
 logger = get_logger("agents.tool_output_parser")
 
@@ -108,32 +113,38 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         raw_hits.extend(rows)
     raw_hits.extend(gottcha2_rows)
 
-    if raw_hits:
-        raw_path = write_csv(run_dir / "tables" / "raw_viral_hits.csv", raw_hits)
-        # Dedupe across tools: per (sample, taxon) keep the max reads (best tool),
-        # then aggregate across samples -- avoids double-counting multi-tool hits.
-        best: dict[tuple, dict] = {}
-        for h in raw_hits:
-            key = (h["sample_id"], h["taxon_name"])
-            if key not in best or h["reads"] > best[key]["reads"]:
-                best[key] = h
-        agg: dict[str, dict] = {}
-        for h in best.values():
-            k = h["taxon_name"]
-            a = agg.setdefault(k, {"taxon_name": k, "family": h["family"], "taxid": h["taxid"],
-                                   "genome_length_kb": h.get("genome_length_kb", 0.0),
-                                   "total_reads": 0, "max_confidence": 0.0, "n_samples": 0})
-            a["total_reads"] += h["reads"]
-            a["max_confidence"] = max(a["max_confidence"], h["confidence"])
-            a["n_samples"] += 1
-        candidates = sorted(agg.values(), key=lambda d: d["total_reads"], reverse=True)
-        cand_path = write_csv(run_dir / "tables" / "candidate_viral_taxa.csv", candidates)
-        tools_used = sorted({h["tool"] for h in raw_hits})
-        update["raw_viral_hits_path"] = str(raw_path)
-        update["candidate_viral_taxa_path"] = str(cand_path)
-        update["viral_detection_summary"] = {"tools": tools_used, "exec_mode": "hpc",
-                                             "n_raw_hits": len(raw_hits), "n_candidate_taxa": len(candidates),
-                                             "note": "Parsed from real Kraken2/Bracken/GOTTCHA2 output."}
+    # ALWAYS write the real viral tables (even when empty) so they authoritatively
+    # overwrite the builders' synthetic placeholders -- 0 viral hits is a valid,
+    # correct result (e.g. a bacteria-dominated sample) and must not fall back.
+    # Dedupe across tools: per (sample, taxon) keep the max reads (best tool).
+    best: dict[tuple, dict] = {}
+    for h in raw_hits:
+        key = (h["sample_id"], h["taxon_name"])
+        if key not in best or h["reads"] > best[key]["reads"]:
+            best[key] = h
+    agg: dict[str, dict] = {}
+    for h in best.values():
+        k = h["taxon_name"]
+        a = agg.setdefault(k, {"taxon_name": k, "family": h["family"], "taxid": h["taxid"],
+                               "genome_length_kb": h.get("genome_length_kb", 0.0),
+                               "total_reads": 0, "max_confidence": 0.0, "n_samples": 0})
+        a["total_reads"] += h["reads"]
+        a["max_confidence"] = max(a["max_confidence"], h["confidence"])
+        a["n_samples"] += 1
+    candidates = sorted(agg.values(), key=lambda d: d["total_reads"], reverse=True)
+
+    raw_path = run_dir / "tables" / "raw_viral_hits.csv"
+    cand_path = run_dir / "tables" / "candidate_viral_taxa.csv"
+    pd.DataFrame(raw_hits, columns=_RAW_COLS).to_csv(raw_path, index=False)
+    pd.DataFrame(candidates, columns=_CAND_COLS).to_csv(cand_path, index=False)
+    tools_used = sorted({h["tool"] for h in raw_hits})
+    update["raw_viral_hits_path"] = str(raw_path)
+    update["candidate_viral_taxa_path"] = str(cand_path)
+    update["viral_detection_summary"] = {"tools": tools_used, "exec_mode": "hpc",
+                                         "n_raw_hits": len(raw_hits), "n_candidate_taxa": len(candidates),
+                                         "note": "Parsed from real Kraken2/Bracken/GOTTCHA2 output."}
+    if not raw_hits:
+        warnings.append("No viral taxa detected (parsed real tool output) — surveillance signal is negative")
 
     n_ok = sum(1 for r in parse_results if r.get("ok"))
     logger.info("Parsed %d file(s) (%d ok); %d viral hit row(s)", len(parse_results), n_ok, len(raw_hits))
