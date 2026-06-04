@@ -8,7 +8,9 @@ deterministic behaviour.
 
 from __future__ import annotations
 
+import json
 import os
+import re
 
 from ..utils.logging_utils import get_logger
 
@@ -86,3 +88,28 @@ def generate(
     except Exception as exc:  # never propagate into the workflow
         logger.warning("LLM generation failed (%s) — falling back to deterministic output", exc)
         return None
+
+
+def generate_json(system: str, user: str, **kwargs) -> dict | None:
+    """Like :func:`generate` but parse the reply as JSON; None on any failure.
+
+    Tolerant of ```json code fences and surrounding prose — extracts the first
+    balanced object. Returns None (→ deterministic fallback) if parsing fails.
+    """
+
+    text = generate(system, user, **kwargs)
+    if not text:
+        return None
+    fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", text, re.DOTALL)
+    raw = fenced.group(1) if fenced else text
+    try:
+        return json.loads(raw)
+    except Exception:
+        try:
+            start, end = raw.find("{"), raw.rfind("}")
+            if start >= 0 and end > start:
+                return json.loads(raw[start:end + 1])
+        except Exception:
+            pass
+    logger.warning("LLM JSON parse failed — falling back to deterministic output")
+    return None

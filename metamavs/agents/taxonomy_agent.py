@@ -7,12 +7,40 @@ from typing import Any
 
 import pandas as pd
 
+from ..llm import generate_json, llm_available
+from ..llm.prompts import TAXONOMY_SYSTEM, build_taxonomy_user
 from ..state import MetaMAVSState
 from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
 from ..utils.taxonomy_utils import flag_false_positive, is_phage
 
 logger = get_logger("agents.taxonomy")
+
+
+def _llm_taxonomy(state: MetaMAVSState, candidates: list[dict]) -> dict[str, dict]:
+    """Return {taxon_name: {is_phage, false_positive, rationale}} from the LLM, or {}.
+
+    Used to AUGMENT the deterministic flags (union — can only add caution).
+    """
+
+    llm_cfg = (state.get("config", {}) or {}).get("llm", {}) or {}
+    if not llm_cfg.get("enabled", False) or not llm_available() or not candidates:
+        return {}
+    data = generate_json(
+        TAXONOMY_SYSTEM, build_taxonomy_user(candidates),
+        model=llm_cfg.get("model", "claude-opus-4-8"),
+        effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)),
+    )
+    if not data or "taxa" not in data:
+        return {}
+    out: dict[str, dict] = {}
+    for t in data.get("taxa", []):
+        name = str(t.get("taxon_name", "")).strip()
+        if name:
+            out[name] = {"is_phage": bool(t.get("is_phage", False)),
+                         "false_positive": bool(t.get("false_positive", False)),
+                         "rationale": str(t.get("rationale", ""))}
+    return out
 
 
 def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
@@ -35,6 +63,11 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     cleaned: list[dict[str, Any]] = []
     fp_flags: list[dict[str, Any]] = []
 
+    # LLM agent layer (optional). Augments deterministic flags within safety
+    # rails: it can only ADD caution (union of flags), never remove it.
+    llm_map = _llm_taxonomy(state, candidates)
+    mode = "llm" if llm_map else "deterministic"
+
     for c in candidates:
         taxon = str(c.get("taxon_name", ""))
         taxid = int(c.get("taxid", 0) or 0)
@@ -49,6 +82,18 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             {"taxon_name": taxon, "reads": reads, "confidence": conf}
         )
 
+        # Merge LLM judgement (union → only adds caution) + keep its rationale.
+        llm_rationale = ""
+        if taxon in llm_map:
+            lj = llm_map[taxon]
+            if lj["is_phage"] and not phage:
+                phage = True
+                reasons.append("llm:phage")
+            if lj["false_positive"] and not flagged:
+                flagged = True
+                reasons.append("llm:false_positive")
+            llm_rationale = lj["rationale"]
+
         record = {
             "taxon_name": taxon,
             "rank": rank,
@@ -59,6 +104,7 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             "is_phage": phage,
             "false_positive_flag": flagged,
             "flag_reasons": ";".join(reasons),
+            "llm_rationale": llm_rationale,
         }
         cleaned.append(record)
         if flagged:
@@ -75,6 +121,7 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "n_phage": n_phage,
         "n_pathogen_like": n_pathogen_like,
         "families": sorted({r["family"] for r in cleaned}),
+        "mode": mode,
     }
     write_json(run_dir / "intermediate" / "taxonomy_summary.json", summary)
 
@@ -82,12 +129,12 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     if len(fp_flags):
         warnings.append(f"{len(fp_flags)} taxon(a) flagged as likely false positives / phage / low-confidence")
 
-    logger.info("Taxonomy: %d taxa, %d flagged (%d phage)", len(cleaned), len(fp_flags), n_phage)
+    logger.info("Taxonomy (%s): %d taxa, %d flagged (%d phage)", mode, len(cleaned), len(fp_flags), n_phage)
 
     return {
         "cleaned_taxonomy_table_path": str(clean_path),
         "false_positive_flags_path": str(fp_path),
         "taxonomy_summary": summary,
         "warnings": warnings,
-        "execution_log": [f"taxonomy_agent: {len(cleaned)} taxa, {len(fp_flags)} flagged"],
+        "execution_log": [f"taxonomy_agent: {len(cleaned)} taxa, {len(fp_flags)} flagged (mode={mode})"],
     }

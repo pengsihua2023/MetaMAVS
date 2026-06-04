@@ -39,6 +39,67 @@ Keep the whole thing under ~450 words.\
 """
 
 
+# --- taxonomy interpretation (LLM agent) ------------------------------------
+TAXONOMY_SYSTEM = """\
+You are a viral taxonomy curator for wastewater/environmental metagenomic \
+surveillance. For each candidate taxon you are given (name, family, taxid, \
+total supporting reads, max classification confidence), classify it into exactly \
+one category and flag review concerns.
+
+Rules:
+- "phage": bacteriophages / environmental phages (e.g. names containing phage, \
+crassphage, *viridae bacteriophage). Not a human/animal pathogen.
+- "false_positive": likely spurious — very low reads (<10), very low confidence \
+(<0.3), low-complexity/fragmentary hits, or common contaminants.
+- "pathogen": a plausible human/animal viral pathogen with reasonable support.
+- "uncertain": unclassified/divergent or otherwise ambiguous.
+Be conservative; when unsure prefer "uncertain" over "pathogen". You may only \
+ADD caution — never claim confirmation.
+
+Respond with JSON ONLY, no prose:
+{"taxa":[{"taxon_name": str, "category": "phage|false_positive|pathogen|uncertain", \
+"is_phage": bool, "false_positive": bool, "rationale": str}]}\
+"""
+
+
+def build_taxonomy_user(candidates: list[dict[str, Any]]) -> str:
+    rows = [
+        {"taxon_name": c.get("taxon_name"), "family": c.get("family"),
+         "taxid": int(c.get("taxid", 0) or 0), "total_reads": int(c.get("total_reads", 0) or 0),
+         "max_confidence": float(c.get("max_confidence", 0.0) or 0.0)}
+        for c in candidates
+    ]
+    return ("Classify these candidate viral taxa. Use only this data.\n\n```json\n"
+            + json.dumps(rows, indent=2, default=str) + "\n```")
+
+
+# --- risk assessment (LLM agent) --------------------------------------------
+RISK_SYSTEM = """\
+You are an epidemiological risk analyst for viral wastewater surveillance. For \
+each taxon you are given (name, supporting reads, whether it is a phage, whether \
+it was flagged a likely false positive, abundance trend, and whether it matches \
+the configured high-risk pathogen list), assign a risk level and explain why.
+
+Risk levels: "Low", "Medium", "High", "Critical".
+Rules (follow exactly — these are signals, not confirmed infections):
+- Environmental phages → always "Low".
+- Likely-false-positive / very low read (<10) signals → "Low" (do not over-claim).
+- A taxon matching the configured high-risk pathogen list with adequate support \
+(>=10 reads) → at least "High"; "Critical" only if ALSO sharply increasing.
+- Non-phage, non-pathogen viruses → "Medium" if substantial support, else "Low".
+- Never exceed the evidence; recommend confirmatory testing for High/Critical.
+
+Respond with JSON ONLY, no prose:
+{"assessments":[{"taxon_name": str, "risk_level": "Low|Medium|High|Critical", \
+"reasoning": str}], "overall_reasoning": str}\
+"""
+
+
+def build_risk_user(evidence: list[dict[str, Any]]) -> str:
+    return ("Assess epidemiological risk for these taxa. Use only this data.\n\n```json\n"
+            + json.dumps(evidence, indent=2, default=str) + "\n```")
+
+
 def build_user_prompt(state: dict[str, Any]) -> str:
     """Render the per-run structured results into a compact prompt."""
 

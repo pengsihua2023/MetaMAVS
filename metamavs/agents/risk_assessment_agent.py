@@ -7,6 +7,8 @@ from typing import Any
 
 import pandas as pd
 
+from ..llm import generate_json, llm_available
+from ..llm.prompts import RISK_SYSTEM, build_risk_user
 from ..pathogens import match_high_risk
 from ..routing import should_request_review
 from ..state import MetaMAVSState
@@ -16,6 +18,48 @@ from ..utils.logging_utils import get_logger
 logger = get_logger("agents.risk")
 
 _RISK_ORDER = {"Low": 0, "Medium": 1, "High": 2, "Critical": 3}
+
+
+def _more_severe(a: str, b: str) -> str:
+    return a if _RISK_ORDER.get(a, 0) >= _RISK_ORDER.get(b, 0) else b
+
+
+def _clamp_llm_risk(llm_level: str, is_phage: bool, flagged: bool, is_known: bool) -> str:
+    """Apply safety rails to the LLM's risk call.
+
+    Phages / likely false positives are pinned Low (LLM may not upgrade them);
+    a configured high-risk pathogen is floored at High (LLM may not downgrade it);
+    otherwise the LLM's judgement stands.
+    """
+
+    level = llm_level if llm_level in _RISK_ORDER else "Low"
+    if is_phage or flagged:
+        return "Low"
+    if is_known:
+        return _more_severe("High", level)
+    return level
+
+
+def _llm_risk(state: MetaMAVSState, evidence: list[dict]) -> dict[str, dict]:
+    """Return {taxon_name: {risk_level, reasoning}} from the LLM, or {}."""
+
+    llm_cfg = (state.get("config", {}) or {}).get("llm", {}) or {}
+    if not llm_cfg.get("enabled", False) or not llm_available() or not evidence:
+        return {}
+    data = generate_json(
+        RISK_SYSTEM, build_risk_user(evidence),
+        model=llm_cfg.get("model", "claude-opus-4-8"),
+        effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)),
+    )
+    if not data or "assessments" not in data:
+        return {}
+    out: dict[str, dict] = {}
+    for a in data.get("assessments", []):
+        name = str(a.get("taxon_name", "")).strip()
+        if name:
+            out[name] = {"risk_level": str(a.get("risk_level", "")).strip(),
+                         "reasoning": str(a.get("reasoning", ""))}
+    return out
 
 
 def _assess_taxon(name, taxid, reads, is_phage, flagged, trend, high_risk_pathogens):
@@ -74,28 +118,47 @@ def risk_assessment_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         tdf = read_csv_safe(trend_path)
         trend = {r["taxon_name"]: r["trend"] for _, r in tdf.iterrows()}
 
+    tax_rows = read_csv_safe(tax_path).to_dict(orient="records") if (tax_path and Path(tax_path).exists()) else []
+
+    # Build evidence and ask the LLM agent (optional) to assess risk.
+    evidence = [
+        {"taxon_name": str(r["taxon_name"]), "total_reads": int(r.get("total_reads", 0) or 0),
+         "is_phage": bool(r.get("is_phage", False)),
+         "false_positive": bool(r.get("false_positive_flag", False)),
+         "trend": trend.get(str(r["taxon_name"]), "stable"),
+         "matches_high_risk_pathogen": match_high_risk(str(r["taxon_name"]), int(r.get("taxid", 0) or 0), high_risk) is not None}
+        for r in tax_rows
+    ]
+    llm_map = _llm_risk(state, evidence)
+    mode = "llm" if llm_map else "deterministic"
+
     risk_rows: list[dict[str, Any]] = []
-    if tax_path and Path(tax_path).exists():
-        for _, r in read_csv_safe(tax_path).iterrows():
-            name = str(r["taxon_name"])
-            level, reasons = _assess_taxon(
-                name,
-                int(r.get("taxid", 0) or 0),
-                int(r.get("total_reads", 0) or 0),
-                bool(r.get("is_phage", False)),
-                bool(r.get("false_positive_flag", False)),
-                trend.get(name, "stable"),
-                high_risk,
-            )
-            risk_rows.append(
-                {
-                    "taxon_name": name,
-                    "risk_level": level,
-                    "total_reads": int(r.get("total_reads", 0) or 0),
-                    "trend": trend.get(name, "stable"),
-                    "reasons": "; ".join(reasons),
-                }
-            )
+    for r in tax_rows:
+        name = str(r["taxon_name"])
+        is_phage = bool(r.get("is_phage", False))
+        flagged = bool(r.get("false_positive_flag", False))
+        matched = match_high_risk(name, int(r.get("taxid", 0) or 0), high_risk)
+        level, reasons = _assess_taxon(
+            name, int(r.get("taxid", 0) or 0), int(r.get("total_reads", 0) or 0),
+            is_phage, flagged, trend.get(name, "stable"), high_risk,
+        )
+        # LLM agent layer: use its call (with safety-rail clamping) + reasoning.
+        if name in llm_map:
+            llm_level = llm_map[name]["risk_level"]
+            clamped = _clamp_llm_risk(llm_level, is_phage, flagged, matched is not None)
+            reasons = [f"[LLM] {llm_map[name]['reasoning']}".strip()]
+            if clamped != llm_level:
+                reasons.append(f"(adjusted from LLM '{llm_level}' to honour safety rails)")
+            level = clamped
+        risk_rows.append(
+            {
+                "taxon_name": name,
+                "risk_level": level,
+                "total_reads": int(r.get("total_reads", 0) or 0),
+                "trend": trend.get(name, "stable"),
+                "reasons": "; ".join(reasons),
+            }
+        )
 
     novel = state.get("novel_candidate_summary", {}) or {}
     for c in novel.get("candidates", []):
@@ -123,6 +186,7 @@ def risk_assessment_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "counts": counts,
         "top_risks": risk_rows[:5],
         "n_novel_candidates": int(novel.get("n_candidates", 0)),
+        "mode": mode,
     }
     write_json(run_dir / "intermediate" / "risk_summary.json", risk_summary)
 
@@ -142,12 +206,12 @@ def risk_assessment_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     interim_state = {**state, "risk_summary": risk_summary, "novel_candidate_summary": novel}
     review_required = should_request_review(interim_state)
 
-    logger.info("Risk: overall=%s, review_required=%s", overall, review_required)
+    logger.info("Risk (%s): overall=%s, review_required=%s", mode, overall, review_required)
 
     return {
         "risk_table_path": str(risk_path),
         "risk_summary": risk_summary,
         "recommended_followup_actions": actions,
         "review_required": review_required,
-        "execution_log": [f"risk_assessment_agent: overall={overall}, review={review_required}"],
+        "execution_log": [f"risk_assessment_agent: overall={overall}, review={review_required} (mode={mode})"],
     }
