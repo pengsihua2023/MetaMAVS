@@ -69,7 +69,9 @@ class SSHBackend(RemoteBackend):
         return last
 
     def _rsync(self, src: str, dst: str) -> bool:
-        argv = ["rsync", "-avz", "--partial", "--checksum", src, dst]
+        # Reuse the SSH ControlMaster connection (no extra Duo prompt).
+        ssh_cmd = "ssh " + " ".join(self.ssh_opts)
+        argv = ["rsync", "-avz", "--partial", "--checksum", "-e", ssh_cmd, src, dst]
         for attempt in range(1, self.retries + 2):
             proc = subprocess.run(argv, capture_output=True, text=True)  # noqa: S603
             if proc.returncode == 0:
