@@ -9,7 +9,7 @@ import pandas as pd
 
 from ..state import MetaMAVSState
 from ..utils.execution import make_runner, maybe_execute_step
-from ..utils.file_utils import write_commands, write_csv, write_json
+from ..utils.file_utils import read_csv_safe, write_commands, write_csv, write_json
 from ..utils.logging_utils import get_logger
 
 logger = get_logger("agents.novel_virus")
@@ -111,7 +111,7 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     candidates: list[dict[str, Any]] = []
     tax_path = state.get("cleaned_taxonomy_table_path")
     if tax_path and Path(tax_path).exists():
-        tax = pd.read_csv(tax_path)
+        tax = read_csv_safe(tax_path)
         for _, r in tax.iterrows():
             unclassified = int(r.get("taxid", 0) or 0) == 0
             divergent = float(r.get("confidence", 1.0)) < 0.6

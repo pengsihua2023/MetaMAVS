@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from ..state import MetaMAVSState
-from ..utils.file_utils import write_csv, write_json
+from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
 from ..utils.taxonomy_utils import flag_false_positive, is_phage
 
@@ -31,7 +31,7 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             "execution_log": ["taxonomy_agent: no candidates to classify"],
         }
 
-    candidates = pd.read_csv(cand_path).to_dict(orient="records")
+    candidates = read_csv_safe(cand_path).to_dict(orient="records")
     cleaned: list[dict[str, Any]] = []
     fp_flags: list[dict[str, Any]] = []
 

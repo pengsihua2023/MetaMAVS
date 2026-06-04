@@ -9,7 +9,7 @@ import pandas as pd
 
 from ..routing import should_request_review
 from ..state import MetaMAVSState
-from ..utils.file_utils import write_csv, write_json
+from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
 
 logger = get_logger("agents.risk")
@@ -66,12 +66,12 @@ def risk_assessment_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     # Build a full trend lookup from the trend table if present.
     trend_path = state.get("trend_summary_path")
     if trend_path and Path(trend_path).exists():
-        tdf = pd.read_csv(trend_path)
+        tdf = read_csv_safe(trend_path)
         trend = {r["taxon_name"]: r["trend"] for _, r in tdf.iterrows()}
 
     risk_rows: list[dict[str, Any]] = []
     if tax_path and Path(tax_path).exists():
-        for _, r in pd.read_csv(tax_path).iterrows():
+        for _, r in read_csv_safe(tax_path).iterrows():
             name = str(r["taxon_name"])
             level, reasons = _assess_taxon(
                 name,

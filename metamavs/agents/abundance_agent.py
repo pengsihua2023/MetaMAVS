@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from ..state import MetaMAVSState
-from ..utils.file_utils import write_csv, write_json
+from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
 
 logger = get_logger("agents.abundance")
@@ -37,7 +37,7 @@ def abundance_analysis_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             "execution_log": ["abundance_agent: no hits to analyse"],
         }
 
-    hits = pd.read_csv(raw_path)
+    hits = read_csv_safe(raw_path)
 
     # Per-sample sequencing depth proxy from QC summary (fallback to hit totals).
     qc = state.get("qc_summary", {}) or {}

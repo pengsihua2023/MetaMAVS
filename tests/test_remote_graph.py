@@ -61,6 +61,39 @@ def test_end_to_end_hpc_mode_with_mock_backend(tmp_path):
     assert final["review_required"] is True
 
 
+def test_hpc_gottcha2_zero_viral_hits(tmp_path):
+    """A bacteria-only GOTTCHA2 result -> 0 viral hits; pipeline still completes
+    (no synthetic fallback, no empty-CSV crash) with a negative signal."""
+    fx = tmp_path / "fx"
+    fx.mkdir()
+    (fx / "gottcha2.tsv").write_text(
+        "LEVEL\tNAME\tTAXID\tREAD_COUNT\n"
+        "species\tJeotgalibaca porci\t1868793\t218087\n"      # bacterium only
+    )
+    (fx / "gottcha2.lineage.tsv").write_text(
+        "8.36\tsuperkingdom\t2\tBacteria\tspecies\t1868793\tJeotgalibaca porci\n"
+    )
+    manifest = tmp_path / "m.csv"
+    manifest.write_text("sample_id,read1,read2\ns1,/scratch/s1_R1.fq.gz,/scratch/s1_R2.fq.gz\n")
+    cfg = {
+        "project": {"run_name": "zv", "output_dir": str(tmp_path / "run")},
+        "input": {"manifest": str(manifest), "sequencing_type": "paired_end", "remote_data": True},
+        "execution": {"dry_run": False, "mode": "hpc", "threads": 2},
+        "tools": {"viral_detection": {"tools": ["gottcha2"], "gottcha2_db": "/db/g2.species.fna"}},
+        "hpc": {"backend": "mock", "remote_base": "~/m", "steps": ["gottcha2"],
+                "mock_fixtures_dir": str(fx)},
+    }
+    p = tmp_path / "c.yaml"
+    p.write_text(yaml.safe_dump(cfg))
+    final = run_local_workflow(load_config(p), config_path="c.yaml", dry_run=False, run_id="run_zv")
+
+    assert final["workflow_status"] in {"completed", "completed_with_warnings"}
+    hits = pd.read_csv(final["raw_viral_hits_path"])   # header-only, readable
+    assert len(hits) == 0                               # no synthetic fallback
+    assert final["risk_summary"]["overall_risk"] == "Low"
+    assert Path(final["markdown_report_path"]).exists()
+
+
 def test_hpc_job_failure_degrades_gracefully(tmp_path):
     """If a remote job fails, the run still completes (warn-and-continue)."""
     cfg_path = _hpc_config(tmp_path)

@@ -65,6 +65,24 @@ def write_csv(path: str | Path, rows: list[dict[str, Any]]) -> Path:
     return path
 
 
+def read_csv_safe(path: str | Path) -> pd.DataFrame:
+    """Read a CSV, returning an empty DataFrame for missing/empty files.
+
+    Intermediate tables can legitimately be empty (e.g. zero viral hits in a
+    bacteria-dominated sample). A bare ``pd.read_csv`` raises ``EmptyDataError``
+    on a header-less empty file; this never does, so downstream agents that
+    iterate rows simply see no rows instead of crashing.
+    """
+
+    path = Path(path)
+    if not path.exists() or path.stat().st_size == 0:
+        return pd.DataFrame()
+    try:
+        return pd.read_csv(path)
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame()
+
+
 def write_text(path: str | Path, text: str) -> Path:
     """Write plain text to *path*. Returns the written path."""
 
