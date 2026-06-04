@@ -29,6 +29,8 @@ class ExecutionConfig(BaseModel):
     dry_run: bool = True
     mode: Literal["local", "slurm"] = "local"
     threads: int = Field(default=8, ge=1)
+    # Phase 2: extra attempts for a failing command before giving up (0 = no retry).
+    retries: int = Field(default=0, ge=0)
 
 
 class QCToolsConfig(BaseModel):
@@ -81,6 +83,17 @@ class RiskConfig(BaseModel):
     review_on_qc_failure: bool = True
 
 
+class SlurmConfig(BaseModel):
+    """SLURM submission parameters (Phase 2 script generation)."""
+
+    partition: str = "batch"
+    time: str = "24:00:00"
+    mem: str = "32G"
+    cpus_per_task: int = Field(default=8, ge=1)
+    modules: list[str] = Field(default_factory=list)
+    conda_env: str | None = None
+
+
 class ReportConfig(BaseModel):
     formats: list[str] = Field(default_factory=lambda: ["markdown", "html"])
 
@@ -103,6 +116,7 @@ class MetaMAVSConfig(BaseModel):
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     risk: RiskConfig = Field(default_factory=RiskConfig)
     report: ReportConfig = Field(default_factory=ReportConfig)
+    slurm: SlurmConfig = Field(default_factory=SlurmConfig)
 
 
 def load_config(path: str | Path) -> MetaMAVSConfig:

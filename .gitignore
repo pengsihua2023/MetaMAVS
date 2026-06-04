@@ -24,3 +24,10 @@ reports/*/intermediate/
 reports/*/commands/
 reports/*/tables/
 reports/*/state.json
+
+# PPT build artifacts (keep build.js; exclude node deps and duplicate output)
+ppt_build/node_modules/
+ppt_build/package-lock.json
+ppt_build/*.pptx
+*.pdf
+slide-*.jpg

@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from ..state import MetaMAVSState
-from ..utils.command_runner import CommandRunner
+from ..utils.execution import make_runner, maybe_execute_step
 from ..utils.file_utils import write_commands, write_json
 from ..utils.logging_utils import get_logger
 
@@ -35,12 +35,14 @@ def qc_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     run_dir = Path(state["run_dir"])
     threads = config.get("execution", {}).get("threads", 8)
     qc_cfg = config.get("tools", {}).get("qc", {})
-    runner = CommandRunner(dry_run=state.get("dry_run", True), threads=threads)
+    runner = make_runner(state)
 
     samples = _load_samples(state)
     commands: list[str] = []
     qc_pass_fail: dict[str, str] = {}
     per_sample: list[dict[str, Any]] = []
+    expected_outputs: list[Any] = []
+    enabled_tools = [t for t in ("fastqc", "fastp", "multiqc") if qc_cfg.get(t, True)]
 
     qc_dir = run_dir / "intermediate" / "qc"
 
@@ -56,8 +58,10 @@ def qc_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             if r2:
                 out2 = qc_dir / "fastp" / f"{sid}_R2.trimmed.fastq.gz"
                 args += ["-I", r2, "-O", out2]
-            args += ["-j", qc_dir / "fastp" / f"{sid}.fastp.json", "-h", qc_dir / "fastp" / f"{sid}.fastp.html"]
+            fastp_json = qc_dir / "fastp" / f"{sid}.fastp.json"
+            args += ["-j", fastp_json, "-h", qc_dir / "fastp" / f"{sid}.fastp.html"]
             commands.append(runner.build(args))
+            expected_outputs.append(fastp_json)
 
         # Synthetic metrics (deterministic) for dry-run demonstration.
         # mean_q dips below the threshold for every 3rd sample to exercise the
@@ -80,6 +84,12 @@ def qc_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     if qc_cfg.get("multiqc", True) and samples:
         commands.append(runner.build(["multiqc", qc_dir, "-o", qc_dir / "multiqc"]))
 
+    # Phase 2: real execution (no-op in dry-run; graceful fallback if tools absent).
+    exec_report, exec_warnings, _fell_back = maybe_execute_step(
+        state=state, runner=runner, step="qc", commands=commands,
+        tools=enabled_tools, expected_outputs=expected_outputs, log_dir=run_dir / "logs",
+    )
+
     cmd_path = write_commands(run_dir, "01_qc", commands)
     qc_summary = {
         "n_samples": len(samples),
@@ -91,17 +101,18 @@ def qc_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     }
     summary_path = write_json(run_dir / "intermediate" / "qc_summary.json", qc_summary)
 
-    warnings = []
+    warnings = list(exec_warnings)
     if qc_summary["n_fail"]:
         warnings.append(f"{qc_summary['n_fail']} sample(s) failed QC thresholds")
 
-    logger.info("QC: %d pass, %d fail", qc_summary["n_pass"], qc_summary["n_fail"])
+    logger.info("QC: %d pass, %d fail (exec mode=%s)", qc_summary["n_pass"], qc_summary["n_fail"], exec_report["mode"])
 
     return {
         "qc_commands": commands,
         "qc_summary_path": str(summary_path),
-        "qc_summary": {"commands_path": str(cmd_path), **qc_summary},
+        "qc_summary": {"commands_path": str(cmd_path), "exec_mode": exec_report["mode"], **qc_summary},
         "qc_pass_fail": qc_pass_fail,
+        "execution_reports": [exec_report],
         "warnings": warnings,
-        "execution_log": [f"qc_agent: generated {len(commands)} command(s)"],
+        "execution_log": [f"qc_agent: {len(commands)} command(s), exec={exec_report['mode']}"],
     }

@@ -6,7 +6,7 @@
 
 - **Project:** MetaMAVS
 - **Run name:** example_run
-- **Run id:** run_20260603_154040
+- **Run id:** run_20260604_003233
 - **Mode:** dry-run
 - **Overall risk:** High
 
@@ -114,7 +114,7 @@
 - **MetaMAVS version:** 0.1.0
 - **Config:** configs/example_config.yaml
 - **Run directory:** reports/example_run
-- **Generated (UTC):** 2026-06-03T15:40:40Z
+- **Generated (UTC):** 2026-06-04T00:32:33Z
 
 
 ---

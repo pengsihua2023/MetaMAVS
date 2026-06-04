@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from ..state import MetaMAVSState
-from ..utils.command_runner import CommandRunner
+from ..utils.execution import make_runner, maybe_execute_step
 from ..utils.file_utils import write_commands, write_json
 from ..utils.logging_utils import get_logger
 
@@ -59,8 +59,10 @@ def host_removal_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     hr_cfg = config.get("tools", {}).get("host_removal", {})
     tool = hr_cfg.get("tool", "bowtie2")
     ref = hr_cfg.get("host_reference") or "/path/to/host/reference"
-    runner = CommandRunner(dry_run=state.get("dry_run", True), threads=threads)
+    runner = make_runner(state)
     builder = _BUILDERS.get(tool, _bowtie2_cmds)
+    # bwa/minimap2 command builders pipe through samtools.
+    tools_needed = [tool] + (["samtools"] if tool in {"bwa", "minimap2"} else [])
 
     samples = _load_samples(state)
     out_dir = run_dir / "intermediate" / "host_removed"
@@ -68,6 +70,7 @@ def host_removal_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     non_host_paths: dict[str, Any] = {}
     per_sample: list[dict[str, Any]] = []
     warnings: list[str] = []
+    expected_outputs: list[Any] = []
 
     if not hr_cfg.get("host_reference"):
         warnings.append("No host_reference configured; using placeholder path in generated commands")
@@ -82,6 +85,7 @@ def host_removal_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         else:
             paths = [str(out_dir / f"{sid}_nonhost.fastq.gz")]
         non_host_paths[sid] = paths
+        expected_outputs.extend(paths)
 
         host_pct = 85.0 - (i % 5) * 7.0  # synthetic host fraction
         per_sample.append(
@@ -93,23 +97,31 @@ def host_removal_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             }
         )
 
+    exec_report, exec_warnings, _fb = maybe_execute_step(
+        state=state, runner=runner, step="host_removal", commands=commands,
+        tools=tools_needed, expected_outputs=expected_outputs, log_dir=run_dir / "logs",
+    )
+    warnings.extend(exec_warnings)
+
     cmd_path = write_commands(run_dir, "02_host_removal", commands)
     summary = {
         "tool": tool,
         "host_reference": ref,
         "n_samples": len(samples),
         "per_sample": per_sample,
+        "exec_mode": exec_report["mode"],
         "note": "Host fractions are synthetic placeholders in dry-run mode.",
     }
     summary_path = write_json(run_dir / "intermediate" / "host_removal_summary.json", summary)
 
-    logger.info("Host removal: %d command(s) for %d sample(s)", len(commands), len(samples))
+    logger.info("Host removal: %d command(s), exec=%s", len(commands), exec_report["mode"])
 
     return {
         "host_removal_commands": commands,
         "host_removal_summary_path": str(summary_path),
         "host_removal_summary": {"commands_path": str(cmd_path), **summary},
         "non_host_fastq_paths": non_host_paths,
+        "execution_reports": [exec_report],
         "warnings": warnings,
-        "execution_log": [f"host_removal_agent: generated {len(commands)} command(s) ({tool})"],
+        "execution_log": [f"host_removal_agent: {len(commands)} command(s) ({tool}), exec={exec_report['mode']}"],
     }

@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 
 from ..state import MetaMAVSState
-from ..utils.command_runner import CommandRunner
+from ..utils.execution import make_runner, maybe_execute_step
 from ..utils.file_utils import write_commands, write_csv, write_json
 from ..utils.logging_utils import get_logger
 
@@ -68,23 +68,41 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     threads = config.get("execution", {}).get("threads", 8)
     asm_cfg = config.get("tools", {}).get("assembly", {})
     nv_cfg = config.get("tools", {}).get("novel_virus_screening", {})
-    runner = CommandRunner(dry_run=state.get("dry_run", True), threads=threads)
+    runner = make_runner(state)
 
     samples = _load_samples(state)
     nonhost = state.get("non_host_fastq_paths", {})
     out_dir = run_dir / "intermediate" / "novel_virus"
     assembler = asm_cfg.get("assembler", "megahit")
     screen_tools = [t.lower() for t in nv_cfg.get("tools", ["virsorter2", "checkv"])]
+    # Tool names as invoked on the command line (assembler binary differs from key).
+    assembler_bin = "metaspades.py" if assembler == "metaspades" else "megahit"
 
     assembly_commands: list[str] = []
     novel_commands: list[str] = []
+    expected_outputs: list[Any] = []
 
     if asm_cfg.get("enabled", True):
         for s in samples:
             assembly_commands.extend(_assembly_cmds(runner, assembler, s["sample_id"], nonhost.get(s["sample_id"], []), out_dir, threads))
+            expected_outputs.append(out_dir / "assembly" / s["sample_id"] / "final.contigs.fa")
     if nv_cfg.get("enabled", True):
         for s in samples:
             novel_commands.extend(_screen_cmds(runner, screen_tools, s["sample_id"], out_dir, threads))
+
+    # Map screening-tool config keys to their actual command-line binaries.
+    _SCREEN_BIN = {
+        "virsorter2": "virsorter", "vibrant": "VIBRANT_run.py",
+        "genomad": "genomad", "checkv": "checkv", "deepvirfinder": "dvf.py",
+    }
+    screen_bins = [_SCREEN_BIN.get(t, t) for t in screen_tools]
+    tools_needed = ([assembler_bin] if asm_cfg.get("enabled", True) else []) + (
+        screen_bins if nv_cfg.get("enabled", True) else []
+    )
+    exec_report, exec_warnings, _fb = maybe_execute_step(
+        state=state, runner=runner, step="novel_virus", commands=assembly_commands + novel_commands,
+        tools=tools_needed, expected_outputs=expected_outputs, log_dir=run_dir / "logs",
+    )
 
     asm_path = write_commands(run_dir, "04_assembly", assembly_commands)
     nv_path = write_commands(run_dir, "05_novel_virus", novel_commands)
@@ -116,15 +134,16 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "assembler": assembler,
         "screening_tools": screen_tools,
         "candidates": candidates,
+        "exec_mode": exec_report["mode"],
         "note": "Candidates derived from synthetic taxonomy in dry-run mode.",
     }
     write_json(run_dir / "intermediate" / "novel_candidate_summary.json", summary)
 
-    warnings = []
+    warnings = list(exec_warnings)
     if candidates:
         warnings.append(f"{len(candidates)} novel/divergent viral candidate(s) require expert review")
 
-    logger.info("Novel screening: %d candidate(s)", len(candidates))
+    logger.info("Novel screening: %d candidate(s), exec=%s", len(candidates), exec_report["mode"])
 
     return {
         "assembly_commands": assembly_commands,
@@ -132,6 +151,7 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "novel_candidate_table_path": str(cand_path),
         "novel_candidate_summary": {"assembly_commands_path": str(asm_path),
                                     "screening_commands_path": str(nv_path), **summary},
+        "execution_reports": [exec_report],
         "warnings": warnings,
-        "execution_log": [f"novel_virus_agent: {len(candidates)} candidate(s)"],
+        "execution_log": [f"novel_virus_agent: {len(candidates)} candidate(s), exec={exec_report['mode']}"],
     }

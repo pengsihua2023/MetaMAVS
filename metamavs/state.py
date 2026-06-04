@@ -86,6 +86,10 @@ class MetaMAVSState(TypedDict, total=False):
     markdown_report_path: str | None
     html_report_path: str | None
 
+    # --- phase 2: real command execution ---------------------------------
+    tool_availability: dict[str, Any]
+    execution_reports: Annotated[list[dict[str, Any]], operator.add]
+
     # --- cross-cutting accumulators (use reducers) -----------------------
     warnings: Annotated[list[str], operator.add]
     errors: Annotated[list[dict[str, Any]], operator.add]
@@ -162,6 +166,8 @@ def create_initial_state(
         approved_for_report=False,
         markdown_report_path=None,
         html_report_path=None,
+        tool_availability={},
+        execution_reports=[],
         warnings=[],
         errors=[],
         execution_log=[],

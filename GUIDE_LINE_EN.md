@@ -80,7 +80,7 @@ real capabilities step by step. There are **4 phases total**:
 | Phase | Name | Goal | External tools needed? | LLM API key needed? | Status |
 |---|---|---|---|---|---|
 | **Phase 1** | Minimal Runnable Prototype | Deterministic, local, dry-run run of the full LangGraph flow, with reports + tests | ❌ No | ❌ No | ✅ **Done** |
-| **Phase 2** | Real Command Execution | Actually execute the generated commands; add error recovery, SLURM | ⚠️ Some | ❌ No | ⬜ Not started |
+| **Phase 2** | Real Command Execution | Actually execute the generated commands; tool checks, validation, recovery, SLURM | ⚠️ Some | ❌ No | ✅ **Done** |
 | **Phase 3** | Bioinformatics Expansion | Integrate all real bioinformatics tools and parse their outputs | ✅ Yes | ❌ No | ⬜ Not started |
 | **Phase 4** | Intelligent Interpretation | Inject LLM reasoning into selected nodes for interpretation/narrative/prose | ✅ Yes | ✅ Yes (optional) | ⬜ Not started |
 
@@ -107,15 +107,21 @@ and the human-review branch) is exercised end-to-end.
 - Intermediate files are generated; the final Markdown report is generated
 - config/state/graph/routing/manifest tests pass; README is complete
 
-### Phase 2 — Real Command Execution ⬜
-After dry-run works, add:
-- **Real command execution** via subprocess (`CommandRunner.run` already has the
-  hook)
-- Command logging, **tool-availability checks**, exit-code validation, output
-  file validation
-- **Failed-command recovery** (retry/skip strategies, extending `error_handler`)
-- **SLURM script generation and submission** (`workflows/slurm_workflow.py`
-  already has a placeholder)
+### Phase 2 — Real Command Execution ✅ (Done)
+Delivered on top of Phase 1 without touching the graph wiring:
+- **Real command execution** via subprocess with a retry loop
+  (`CommandRunner.run` + `utils/execution.py`)
+- **Tool-availability checks** (`shutil.which`) + a new `metamavs tools` command
+- **Exit-code validation** with **warn-and-continue** recovery; configurable
+  `execution.retries`
+- **Output-file validation** (expected outputs checked after execution)
+- **Graceful fallback**: when a required tool is missing, the step warns and
+  falls back to synthetic data so the pipeline still completes
+- Per-step execution logs (`logs/exec_<step>.log`) and an `execution_reports`
+  state accumulator
+- **SLURM script generation** driven by a config `slurm:` section
+  (`workflows/slurm_workflow.py`)
+- 13 new tests (50 total, all passing); dry-run behavior fully preserved
 
 ### Phase 3 — Bioinformatics Expansion ⬜
 Integrate and parse real tool outputs, replacing synthetic data with real

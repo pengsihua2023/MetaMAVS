@@ -122,6 +122,41 @@ def validate(
 
 
 @app.command()
+def tools(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, help="Path to YAML config."),
+):
+    """Check availability of the bioinformatics tools referenced by the config."""
+
+    from .utils.command_runner import CommandRunner
+
+    setup_logging(level=logging.WARNING)
+    cfg = load_config(config)
+
+    needed: list[str] = []
+    qc = cfg.tools.qc
+    needed += [t for t, on in (("fastqc", qc.fastqc), ("fastp", qc.fastp), ("multiqc", qc.multiqc)) if on]
+    needed.append(cfg.tools.host_removal.tool)
+    if cfg.tools.host_removal.tool in {"bwa", "minimap2"}:
+        needed.append("samtools")
+    needed += [t.lower() for t in cfg.tools.viral_detection.tools]
+    if cfg.tools.assembly.enabled:
+        needed.append("metaspades.py" if cfg.tools.assembly.assembler == "metaspades" else "megahit")
+    if cfg.tools.novel_virus_screening.enabled:
+        screen_bin = {"virsorter2": "virsorter", "vibrant": "VIBRANT_run.py", "genomad": "genomad",
+                      "checkv": "checkv", "deepvirfinder": "dvf.py"}
+        needed += [screen_bin.get(t.lower(), t.lower()) for t in cfg.tools.novel_virus_screening.tools]
+
+    seen = list(dict.fromkeys(needed))
+    _echo(f"Tool availability ({len(seen)} referenced by {config}):")
+    n_ok = 0
+    for tool in seen:
+        ok = CommandRunner.tool_available(tool)
+        n_ok += int(ok)
+        _echo(f"  [{'OK ' if ok else 'MISSING'}] {tool}")
+    _echo(f"\n{n_ok}/{len(seen)} available. Missing tools trigger graceful fallback in --execute mode.")
+
+
+@app.command()
 def slurm(
     config: Path = typer.Option(..., "--config", "-c", exists=True, help="Path to YAML config."),
     dry_run: bool = typer.Option(True, "--dry-run/--execute", help="Embed --dry-run in the script."),

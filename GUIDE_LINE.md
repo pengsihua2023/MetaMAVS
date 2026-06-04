@@ -57,7 +57,7 @@ MetaMAVS 采用**渐进式交付**:先跑通骨架,再逐步加真实能力。**
 | Phase | 名称 | 目标 | 是否需要外部工具 | 是否需要 LLM API Key | 当前状态 |
 |---|---|---|---|---|---|
 | **Phase 1** | 最小可运行原型 | 确定性、本地、dry-run 跑通整条 LangGraph 流程,出报告+测试 | ❌ 不需要 | ❌ 不需要 | ✅ **已完成** |
-| **Phase 2** | 真实命令执行 | 把 dry-run 生成的命令真正跑起来,加错误恢复、SLURM | ⚠️ 需要部分工具 | ❌ 不需要 | ⬜ 未开始 |
+| **Phase 2** | 真实命令执行 | 把 dry-run 生成的命令真正跑起来,加工具检查、校验、恢复、SLURM | ⚠️ 需要部分工具 | ❌ 不需要 | ✅ **已完成** |
 | **Phase 3** | 生信工具扩展 | 接入全部真实生信工具并解析其输出 | ✅ 需要 | ❌ 不需要 | ⬜ 未开始 |
 | **Phase 4** | 智能解释 | 在选定节点接入 LLM 做解释/叙述/报告润色 | ✅ 需要 | ✅ 需要(可选) | ⬜ 未开始 |
 
@@ -80,12 +80,16 @@ MetaMAVS 采用**渐进式交付**:先跑通骨架,再逐步加真实能力。**
 - 中间文件生成;最终 Markdown 报告生成
 - config/state/graph/routing/manifest 测试通过;README 完整
 
-### Phase 2 — 真实命令执行 ⬜
-在 dry-run 跑通之后,加入:
-- 基于 subprocess 的**真实命令执行**(`CommandRunner.run` 已预留接口)
-- 命令日志、**工具可用性检查**、退出码校验、输出文件校验
-- **失败命令恢复**(重试/跳过策略,扩展 `error_handler`)
-- **SLURM 脚本生成与提交**(`workflows/slurm_workflow.py` 已有占位)
+### Phase 2 — 真实命令执行 ✅(已完成)
+在 Phase 1 之上扩展,**未改动图的接线**:
+- 基于 subprocess 的**真实命令执行** + 重试循环(`CommandRunner.run` + `utils/execution.py`)
+- **工具可用性检查**(`shutil.which`)+ 新增 `metamavs tools` 命令
+- **退出码校验** + **警告后继续**的恢复策略;可配置 `execution.retries`
+- **输出文件校验**(执行后检查预期产物是否生成)
+- **优雅回退**:所需工具缺失时,该步骤记警告并回退到合成数据,流水线仍能跑完
+- 每步执行日志(`logs/exec_<step>.log`)+ `execution_reports` 状态累加器
+- **SLURM 脚本生成**,由 config 的 `slurm:` 段驱动(`workflows/slurm_workflow.py`)
+- 新增 13 个测试(共 50 个全绿);dry-run 行为完全保留
 
 ### Phase 3 — 生信工具扩展 ⬜
 接入并解析真实工具的输出,把合成数据替换为真实结果:

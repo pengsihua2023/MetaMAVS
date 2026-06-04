@@ -33,6 +33,9 @@ def final_summary_node(state: MetaMAVSState) -> dict[str, Any]:
         if r.get("risk_level") in {"High", "Critical"}
     ]
 
+    exec_reports = state.get("execution_reports", []) or []
+    exec_modes = {r.get("step"): r.get("mode") for r in exec_reports}
+
     final_summary = {
         "status": status,
         "run_id": state.get("run_id", ""),
@@ -41,6 +44,7 @@ def final_summary_node(state: MetaMAVSState) -> dict[str, Any]:
         "high_risk_detections": high_risk,
         "n_warnings": len(warnings),
         "n_errors": len(errors),
+        "execution_modes": exec_modes,
         "markdown_report": state.get("markdown_report_path"),
         "html_report": state.get("html_report_path"),
         "review_decision": state.get("review_decision"),

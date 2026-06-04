@@ -15,7 +15,7 @@ from typing import Any
 import pandas as pd
 
 from ..state import MetaMAVSState
-from ..utils.command_runner import CommandRunner
+from ..utils.execution import make_runner, maybe_execute_step
 from ..utils.file_utils import write_commands, write_csv, write_json
 from ..utils.logging_utils import get_logger
 
@@ -79,7 +79,7 @@ def viral_detection_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     vd_cfg = config.get("tools", {}).get("viral_detection", {})
     tools = [t.lower() for t in vd_cfg.get("tools", ["kraken2", "diamond"])]
     dbs = {"kraken2_db": vd_cfg.get("kraken2_db"), "diamond_db": vd_cfg.get("diamond_db")}
-    runner = CommandRunner(dry_run=state.get("dry_run", True), threads=threads)
+    runner = make_runner(state)
 
     samples = _load_samples(state)
     nonhost = state.get("non_host_fastq_paths", {})
@@ -87,10 +87,13 @@ def viral_detection_agent_node(state: MetaMAVSState) -> dict[str, Any]:
 
     commands: list[str] = []
     raw_hits: list[dict[str, Any]] = []
+    expected_outputs: list[Any] = []
 
     for si, s in enumerate(samples):
         sid = s["sample_id"]
         commands.extend(_detection_commands(runner, tools, dbs, nonhost, sid, out_dir, threads))
+        if "kraken2" in tools:
+            expected_outputs.append(out_dir / f"{sid}.kraken2.report")
         # Deterministic synthetic hits: vary read counts per sample index.
         for ti, (taxon, family, taxid, glen, conf) in enumerate(_CATALOGUE):
             base = 1500 // (ti + 1)
@@ -109,6 +112,11 @@ def viral_detection_agent_node(state: MetaMAVSState) -> dict[str, Any]:
                     "tool": tools[0] if tools else "kraken2",
                 }
             )
+
+    exec_report, exec_warnings, _fb = maybe_execute_step(
+        state=state, runner=runner, step="viral_detection", commands=commands,
+        tools=tools, expected_outputs=expected_outputs, log_dir=run_dir / "logs",
+    )
 
     cmd_path = write_commands(run_dir, "03_viral_detection", commands)
     raw_path = write_csv(run_dir / "tables" / "raw_viral_hits.csv", raw_hits)
@@ -131,16 +139,19 @@ def viral_detection_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "n_raw_hits": len(raw_hits),
         "n_candidate_taxa": len(candidates),
         "n_samples": len(samples),
+        "exec_mode": exec_report["mode"],
         "note": "Hit tables are synthetic placeholders in dry-run mode.",
     }
     write_json(run_dir / "intermediate" / "viral_detection_summary.json", summary)
 
-    logger.info("Viral detection: %d candidate taxa across %d sample(s)", len(candidates), len(samples))
+    logger.info("Viral detection: %d candidate taxa, exec=%s", len(candidates), exec_report["mode"])
 
     return {
         "viral_detection_commands": commands,
         "raw_viral_hits_path": str(raw_path),
         "candidate_viral_taxa_path": str(cand_path),
         "viral_detection_summary": {"commands_path": str(cmd_path), **summary},
-        "execution_log": [f"viral_detection_agent: {len(candidates)} candidate taxa"],
+        "execution_reports": [exec_report],
+        "warnings": exec_warnings,
+        "execution_log": [f"viral_detection_agent: {len(candidates)} candidate taxa, exec={exec_report['mode']}"],
     }
