@@ -45,9 +45,11 @@ def parse_gottcha2(path: str, sample_id: str | None = None) -> dict[str, Any]:
     """Viral species-level GOTTCHA2 rows -> raw_viral_hits schema (tool='gottcha2')."""
 
     try:
-        lineage_path = Path(str(path).replace(".gottcha2.tsv", ".gottcha2.lineage.tsv"))
-        has_lineage = lineage_path.exists()
-        viral_taxids = _viral_species_taxids(lineage_path) if has_lineage else set()
+        p = str(path)
+        suffix = ".gottcha2.tsv"
+        lineage_path = Path(p[: -len(suffix)] + ".gottcha2.lineage.tsv") if p.endswith(suffix) else None
+        has_lineage = lineage_path is not None and lineage_path.exists()
+        viral_taxids = _viral_species_taxids(lineage_path) if has_lineage and lineage_path else set()
         warnings: list[str] = []
         if not has_lineage:
             warnings.append("gottcha2: no sibling lineage.tsv -> viral-lineage filter skipped")
