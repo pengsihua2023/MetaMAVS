@@ -22,6 +22,8 @@ def render_job_script(spec: RemoteJobSpec, log_dir: str) -> str:
         "#!/usr/bin/env bash",
         f"#SBATCH --job-name={spec.job_name}",
         f"#SBATCH --partition={r.partition}",
+        "#SBATCH --nodes=1",
+        "#SBATCH --ntasks=1",
         f"#SBATCH --cpus-per-task={r.cpus}",
         f"#SBATCH --mem={r.mem}",
         f"#SBATCH --time={r.time}",
