@@ -31,3 +31,7 @@ ppt_build/package-lock.json
 ppt_build/*.pptx
 *.pdf
 slide-*.jpg
+
+# Stray tool-output files dropped at repo root (comparisons, scratch)
+/*.tsv
+/*.full.tsv
