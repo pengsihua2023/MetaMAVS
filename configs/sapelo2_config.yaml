@@ -39,6 +39,12 @@ risk:
 report:
   formats: [markdown, html]
 
+llm:
+  enabled: true              # Phase 4: AI-assisted interpretation (needs ANTHROPIC_API_KEY in .env)
+  model: claude-opus-4-8
+  effort: medium
+  max_tokens: 4000
+
 hpc:
   backend: ssh
   host: sapelo2.gacrc.uga.edu
