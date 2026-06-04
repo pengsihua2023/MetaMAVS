@@ -1,14 +1,12 @@
-"""Build the remote SLURM job DAG (one job per bioinformatics step).
+"""Build the remote SLURM job DAG.
 
-Generates a :class:`RemoteJobSpec` per step (qc -> host_removal ->
-viral_detection; novel_virus depends on host_removal), renders a self-contained
-SLURM script for each, and records the **remote** output paths that
-``result_sync`` will download and the parsers will read.
+Step-driven and per-step environment aware: each tool can live in its own conda
+env / module set (resolved from ``hpc.step_env``), so e.g. Kraken2 and GOTTCHA2
+become separate SLURM jobs. ``hpc.steps`` selects which steps to run (default:
+derived from the tools config), enabling minimal runs like GOTTCHA2-only.
 
-Note: the payload commands are representative tool invocations referencing the
-remote inputs/outputs; on a real cluster they are the integration point to
-finalize per-tool flags/databases. The output-path contract (filenames below)
-is what drives sync + parsing and must stay stable.
+Activation is done by prepending the env's bin to PATH (robust on GACRC Sapelo2;
+no ``conda init`` needed) -- supply those lines via ``hpc.step_env``.
 """
 
 from __future__ import annotations
@@ -35,8 +33,25 @@ def remote_run_dir(state: dict) -> str:
     return f"{base}/metamavs/{state['run_id']}"
 
 
+def _default_steps(tools_cfg: dict) -> list[str]:
+    qc = tools_cfg.get("qc", {}) or {}
+    vd_tools = [t.lower() for t in (tools_cfg.get("viral_detection", {}) or {}).get("tools", [])]
+    nv = tools_cfg.get("novel_virus_screening", {}) or {}
+    steps: list[str] = []
+    if any(qc.get(t, False) for t in ("fastqc", "fastp", "multiqc")):
+        steps.append("qc")
+    steps.append("host_removal")
+    if "kraken2" in vd_tools:
+        steps.append("kraken2")
+    if "gottcha2" in vd_tools:
+        steps.append("gottcha2")
+    if nv.get("enabled", True):
+        steps.append("novel_virus")
+    return steps
+
+
 def build_job_specs(state: dict) -> list[RemoteJobSpec]:
-    """Construct the per-step job specs and write their SLURM scripts locally."""
+    """Construct per-step job specs (writing their SLURM scripts locally)."""
 
     from .slurm import render_job_script
 
@@ -45,99 +60,111 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
     tools_cfg = cfg.get("tools", {}) or {}
     run_dir = Path(state["run_dir"])
     rrun = remote_run_dir(state)
-    res_defaults = dict(partition=hpc.get("partition", "batch"))
-    modules = hpc.get("modules", [])
-    conda_env = hpc.get("conda_env")
-    env_setup = hpc.get("env_setup", [])
+    threads = cfg.get("execution", {}).get("threads", 8)
+    partition = hpc.get("partition", "batch")
+    base_res = dict(partition=partition, cpus=hpc.get("cpus", 8),
+                    mem=hpc.get("mem", "32G"), time=hpc.get("time", "24:00:00"))
+    step_resources: dict[str, dict] = hpc.get("step_resources", {}) or {}
     scripts_local = run_dir / "remote" / "scripts"
     log_dir = f"{rrun}/logs"
 
+    def res_for(step: str) -> ResourceSpec:
+        return ResourceSpec(**{**base_res, "partition": partition, **step_resources.get(step, {})})
+
+    step_env: dict[str, list[str]] = hpc.get("step_env", {}) or {}
+    global_setup: list[str] = hpc.get("env_setup", [])
+    conda_env = hpc.get("conda_env")
+    steps = hpc.get("steps") or _default_steps(tools_cfg)
+    host_enabled = "host_removal" in steps
     samples = _samples(state)
     specs: list[RemoteJobSpec] = []
 
-    def finalize(spec: RemoteJobSpec) -> RemoteJobSpec:
-        spec.modules = modules
-        spec.conda_env = conda_env
-        spec.env_setup = env_setup
-        script = render_job_script(spec, log_dir=log_dir)
-        write_text(spec.script_local, script)
-        return spec
+    def env_for(step: str) -> list[str]:
+        return step_env.get(step, global_setup)
 
-    # --- qc ---------------------------------------------------------------
-    qc_out, qc_cmds = [], [f"mkdir -p {rrun}/results/qc"]
-    for s in samples:
-        sid, r1, r2 = s["sample_id"], s.get("read1", ""), s.get("read2", "")
-        qc_out.append(f"{rrun}/results/qc/{sid}.fastqc_data.txt")
-        qc_cmds.append(f"fastqc -t {cfg.get('execution', {}).get('threads', 8)} -o {rrun}/results/qc {r1} {r2}".strip())
-    specs.append(finalize(RemoteJobSpec(
-        job_name="qc", step="qc", payload=qc_cmds, output_files=qc_out,
-        script_local=str(scripts_local / "qc.sh"), script_remote=f"{rrun}/scripts/qc.sh",
-        resources=ResourceSpec(**res_defaults),
-    )))
-
-    # --- host_removal (depends qc) ---------------------------------------
-    hr = tools_cfg.get("host_removal", {})
-    tool = hr.get("tool", "bowtie2")
-    ref = hr.get("host_reference") or "$HOST_REF"
-    hr_out, hr_cmds = [], [f"mkdir -p {rrun}/results/host_removal"]
-    for s in samples:
-        sid, r1, r2 = s["sample_id"], s.get("read1", ""), s.get("read2", "")
-        bam = f"{rrun}/work/{sid}.host.bam"
-        hr_cmds.append(f"{tool} -x {ref} -1 {r1} -2 {r2} | samtools view -bS - > {bam}")
-        hr_cmds.append(f"samtools flagstat {bam} > {rrun}/results/host_removal/{sid}.flagstat")
-        hr_out.append(f"{rrun}/results/host_removal/{sid}.flagstat")
-    specs.append(finalize(RemoteJobSpec(
-        job_name="host_removal", step="host_removal", payload=hr_cmds, output_files=hr_out,
-        depends_on=["qc"], script_local=str(scripts_local / "host_removal.sh"),
-        script_remote=f"{rrun}/scripts/host_removal.sh", resources=ResourceSpec(**res_defaults),
-    )))
-
-    # --- viral_detection (depends host_removal): Kraken2/Bracken + GOTTCHA2 ---
-    vd = tools_cfg.get("viral_detection", {})
-    tools = [t.lower() for t in vd.get("tools", ["kraken2"])]
-    k2db = vd.get("kraken2_db") or "$KRAKEN2_DB"
-    g2db = vd.get("gottcha2_db") or "$GOTTCHA2_DB"
-    threads = cfg.get("execution", {}).get("threads", 8)
-    vd_out, vd_cmds = [], [f"mkdir -p {rrun}/results/viral_detection"]
-    for s in samples:
+    def reads_for(s: dict) -> tuple[str, str]:
+        """Remote read paths for a sample: host-removed if that step runs, else raw."""
         sid = s["sample_id"]
-        r1 = f"{rrun}/work/{sid}_nonhost_R1.fastq.gz"
-        r2 = f"{rrun}/work/{sid}_nonhost_R2.fastq.gz"
-        if "kraken2" in tools:
-            rep = f"{rrun}/results/viral_detection/{sid}.kraken2.report"
-            vd_cmds.append(f"kraken2 --db {k2db} --threads {threads} --report {rep} "
-                           f"--output {rrun}/work/{sid}.k2.out --paired {r1} {r2}")
-            vd_cmds.append(f"bracken -d {k2db} -i {rep} -o {rrun}/results/viral_detection/{sid}.bracken -r 150 -l S")
-            vd_out += [rep, f"{rrun}/results/viral_detection/{sid}.bracken"]
-        if "gottcha2" in tools:
-            g2out = f"{rrun}/results/viral_detection/{sid}.gottcha2.tsv"
-            vd_cmds.append(f"gottcha2.py -i {r1} {r2} -d {g2db} -t {threads} "
-                           f"-o {rrun}/work/{sid}.gottcha2 -p {sid}")
-            vd_cmds.append(f"cp {rrun}/work/{sid}.gottcha2/{sid}.tsv {g2out}")
-            vd_out.append(g2out)
-    specs.append(finalize(RemoteJobSpec(
-        job_name="viral_detection", step="viral_detection", payload=vd_cmds, output_files=vd_out,
-        depends_on=["host_removal"], script_local=str(scripts_local / "viral_detection.sh"),
-        script_remote=f"{rrun}/scripts/viral_detection.sh", resources=ResourceSpec(**res_defaults),
-    )))
+        if host_enabled:
+            return (f"{rrun}/work/{sid}_nonhost_R1.fastq.gz", f"{rrun}/work/{sid}_nonhost_R2.fastq.gz")
+        return (s.get("read1", ""), s.get("read2", ""))
 
-    # --- novel_virus (depends host_removal) ------------------------------
-    nv = tools_cfg.get("novel_virus_screening", {})
-    if nv.get("enabled", True):
-        nv_out, nv_cmds = [], [f"mkdir -p {rrun}/results/novel_virus"]
+    def add(job_name: str, step: str, payload: list[str], outputs: list[str], deps: list[str]) -> None:
+        spec = RemoteJobSpec(
+            job_name=job_name, step=step, payload=payload, output_files=outputs, depends_on=deps,
+            script_local=str(scripts_local / f"{job_name}.sh"),
+            script_remote=f"{rrun}/scripts/{job_name}.sh", resources=res_for(step),
+            env_setup=env_for(step), conda_env=conda_env if not env_for(step) else None,
+        )
+        write_text(spec.script_local, render_job_script(spec, log_dir=log_dir))
+        specs.append(spec)
+
+    qc_dep = ["qc"] if "qc" in steps else []
+    host_dep = ["host_removal"] if host_enabled else []
+
+    # --- qc ---
+    if "qc" in steps:
+        out, cmds = [], [f"mkdir -p {rrun}/results/qc"]
         for s in samples:
             sid = s["sample_id"]
-            nv_cmds.append(f"megahit -1 {rrun}/work/{sid}_nonhost_R1.fastq.gz "
-                           f"-2 {rrun}/work/{sid}_nonhost_R2.fastq.gz -o {rrun}/work/{sid}.assembly")
-            nv_cmds.append(f"checkv end_to_end {rrun}/work/{sid}.assembly/final.contigs.fa "
-                           f"{rrun}/work/{sid}.checkv")
-            nv_cmds.append(f"cp {rrun}/work/{sid}.checkv/quality_summary.tsv "
-                           f"{rrun}/results/novel_virus/{sid}.checkv_quality_summary.tsv")
-            nv_out.append(f"{rrun}/results/novel_virus/{sid}.checkv_quality_summary.tsv")
-        specs.append(finalize(RemoteJobSpec(
-            job_name="novel_virus", step="novel_virus", payload=nv_cmds, output_files=nv_out,
-            depends_on=["host_removal"], script_local=str(scripts_local / "novel_virus.sh"),
-            script_remote=f"{rrun}/scripts/novel_virus.sh", resources=ResourceSpec(**res_defaults),
-        )))
+            cmds.append(f"fastqc -t {threads} -o {rrun}/results/qc {s.get('read1','')} {s.get('read2','')}".strip())
+            out.append(f"{rrun}/results/qc/{sid}.fastqc_data.txt")
+        add("qc", "qc", cmds, out, [])
+
+    # --- host_removal (minimap2 + samtools flagstat) ---
+    if host_enabled:
+        hr = tools_cfg.get("host_removal", {})
+        ref = hr.get("host_reference") or "$HOST_REF"
+        out, cmds = [], [f"mkdir -p {rrun}/results/host_removal {rrun}/work"]
+        for s in samples:
+            sid, r1, r2 = s["sample_id"], s.get("read1", ""), s.get("read2", "")
+            bam = f"{rrun}/work/{sid}.host.bam"
+            cmds.append(f"minimap2 -ax sr -t {threads} {ref} {r1} {r2} | samtools view -bS - > {bam}")
+            cmds.append(f"samtools flagstat {bam} > {rrun}/results/host_removal/{sid}.flagstat")
+            out.append(f"{rrun}/results/host_removal/{sid}.flagstat")
+        add("host_removal", "host_removal", cmds, out, qc_dep)
+
+    # --- kraken2 + bracken ---
+    if "kraken2" in steps:
+        vd = tools_cfg.get("viral_detection", {})
+        k2db = vd.get("kraken2_db") or "$KRAKEN2_DB"
+        out, cmds = [], [f"mkdir -p {rrun}/results/viral_detection {rrun}/work"]
+        for s in samples:
+            sid = s["sample_id"]
+            r1, r2 = reads_for(s)
+            rep = f"{rrun}/results/viral_detection/{sid}.kraken2.report"
+            cmds.append(f"kraken2 --db {k2db} --threads {threads} --report {rep} "
+                        f"--output {rrun}/work/{sid}.k2.out --paired {r1} {r2}")
+            cmds.append(f"bracken -d {k2db} -i {rep} -o {rrun}/results/viral_detection/{sid}.bracken -r 150 -l S")
+            out += [rep, f"{rrun}/results/viral_detection/{sid}.bracken"]
+        add("kraken2", "kraken2", cmds, out, host_dep)
+
+    # --- gottcha2 ---
+    if "gottcha2" in steps:
+        vd = tools_cfg.get("viral_detection", {})
+        g2db = vd.get("gottcha2_db") or "$GOTTCHA2_DB"
+        out, cmds = [], [f"mkdir -p {rrun}/results/viral_detection {rrun}/work"]
+        for s in samples:
+            sid = s["sample_id"]
+            r1, r2 = reads_for(s)
+            g2out = f"{rrun}/results/viral_detection/{sid}.gottcha2.tsv"
+            cmds.append(f"gottcha2.py -i {r1} {r2} -d {g2db} -t {threads} "
+                        f"-o {rrun}/work/{sid}.gottcha2 -p {sid}")
+            cmds.append(f"cp {rrun}/work/{sid}.gottcha2/{sid}.tsv {g2out}")
+            out.append(g2out)
+        add("gottcha2", "gottcha2", cmds, out, host_dep)
+
+    # --- novel_virus (assembly + checkv) ---
+    if "novel_virus" in steps:
+        out, cmds = [], [f"mkdir -p {rrun}/results/novel_virus {rrun}/work"]
+        for s in samples:
+            sid = s["sample_id"]
+            r1, r2 = reads_for(s)
+            cmds.append(f"megahit -1 {r1} -2 {r2} -o {rrun}/work/{sid}.assembly")
+            cmds.append(f"checkv end_to_end {rrun}/work/{sid}.assembly/final.contigs.fa {rrun}/work/{sid}.checkv")
+            cmds.append(f"cp {rrun}/work/{sid}.checkv/quality_summary.tsv "
+                        f"{rrun}/results/novel_virus/{sid}.checkv_quality_summary.tsv")
+            out.append(f"{rrun}/results/novel_virus/{sid}.checkv_quality_summary.tsv")
+        add("novel_virus", "novel_virus", cmds, out, host_dep)
 
     return specs

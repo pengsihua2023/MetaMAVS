@@ -108,6 +108,7 @@ def validate(
         cfg.input.manifest,
         sequencing_type=cfg.input.sequencing_type,
         dry_run=cfg.execution.dry_run,
+        remote_data=cfg.input.remote_data,
     )
     _echo(f"Manifest : {cfg.input.manifest}")
     _echo(f"  samples : {result.summary.get('n_samples', 0)}")

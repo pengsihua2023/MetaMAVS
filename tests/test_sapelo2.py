@@ -69,14 +69,46 @@ def test_jobgen_includes_gottcha2(tmp_path):
                       "novel_virus_screening": {"enabled": False}},
         },
     }
+    state["config"]["hpc"]["step_env"] = {
+        "kraken2": ["export PATH=/envs/kraken2_env/bin:$PATH"],
+        "gottcha2": ["export PATH=/envs/gottcha2_env/bin:$PATH"],
+    }
     specs = build_job_specs(state)
-    vd = next(s for s in specs if s.job_name == "viral_detection")
-    payload = "\n".join(vd.payload)
-    assert "kraken2 --db /db/k2" in payload
-    assert "gottcha2.py -i" in payload and "/db/g2" in payload
-    assert any("gottcha2.tsv" in o for o in vd.output_files)
-    # conda env setup propagated to the rendered script
-    assert "ml Miniconda3" in Path(vd.script_local).read_text()
+    names = {s.job_name for s in specs}
+    # Kraken2 and GOTTCHA2 are now SEPARATE jobs (different conda envs).
+    assert "kraken2" in names and "gottcha2" in names
+    k2 = next(s for s in specs if s.job_name == "kraken2")
+    g2 = next(s for s in specs if s.job_name == "gottcha2")
+    assert "kraken2 --db /db/k2" in "\n".join(k2.payload)
+    assert "gottcha2.py -i" in "\n".join(g2.payload) and "/db/g2" in "\n".join(g2.payload)
+    assert any("gottcha2.tsv" in o for o in g2.output_files)
+    # per-step env applied to the rendered script
+    assert "kraken2_env/bin" in Path(k2.script_local).read_text()
+    assert "gottcha2_env/bin" in Path(g2.script_local).read_text()
+
+
+def test_jobgen_gottcha2_only(tmp_path):
+    """hpc.steps=[gottcha2] -> a single GOTTCHA2 job reading the raw FASTQ."""
+    run_dir = tmp_path / "run"
+    (run_dir / "intermediate").mkdir(parents=True)
+    (run_dir / "intermediate" / "validated_manifest.csv").write_text(
+        "sample_id,read1,read2\nWW01,/scratch/WW01_R1.fq.gz,/scratch/WW01_R2.fq.gz\n"
+    )
+    state = {
+        "run_id": "rid", "run_dir": str(run_dir),
+        "validated_manifest_path": str(run_dir / "intermediate" / "validated_manifest.csv"),
+        "config": {"execution": {"threads": 8},
+                   "hpc": {"remote_base": "/scratch/u/mm", "partition": "bahl_p", "steps": ["gottcha2"],
+                           "step_env": {"gottcha2": ["export PATH=/envs/gottcha2_env/bin:$PATH"]}},
+                   "tools": {"viral_detection": {"tools": ["gottcha2"], "gottcha2_db": "/db/g2.species"}}},
+    }
+    from metamavs.remote.jobgen import build_job_specs as bjs
+    specs = bjs(state)
+    assert [s.job_name for s in specs] == ["gottcha2"]
+    g2 = specs[0]
+    assert g2.depends_on == []                       # no host removal -> no deps
+    # reads the RAW manifest paths (not host-removed work paths)
+    assert "/scratch/WW01_R1.fq.gz" in "\n".join(g2.payload)
 
 
 def test_sapelo2_config_loads():

@@ -1,0 +1,2 @@
+sample_id,read1,read2,collection_date,location,sample_type
+llnl_66ce4dde,/scratch/sp96859/Meta-genome-data-analysis/Apptainer/data/short_reads/llnl_66ce4dde_R1.fastq.gz,/scratch/sp96859/Meta-genome-data-analysis/Apptainer/data/short_reads/llnl_66ce4dde_R2.fastq.gz,2025-12-02,sapelo2,metagenome

@@ -1,15 +1,15 @@
-# MetaMAVS — UGA GACRC Sapelo2 configuration (Phase 3, real cluster).
-# Controller runs on your laptop and submits SLURM jobs to Sapelo2 over SSH.
-# First connection triggers Duo 2FA; SSH ControlMaster then reuses it.
+# MetaMAVS — UGA GACRC Sapelo2, GOTTCHA2-only smoke test (Phase 3 real cluster).
+# Controller on your laptop submits a single GOTTCHA2 SLURM job to Sapelo2 over
+# SSH (ControlMaster reuses one Duo auth), downloads the .tsv, parses locally.
 #
-# >>> FILL IN the paths marked TODO before an --execute run. <<<
+# >>> FILL the two TODO paths before --execute. <<<
 project:
   name: MetaMAVS
-  run_name: sapelo2_run
-  output_dir: reports/sapelo2_run
+  run_name: sapelo2_gottcha2_smoke
+  output_dir: reports/sapelo2_gottcha2_smoke
 
 input:
-  manifest: data/example_manifest.csv   # TODO: a manifest whose read1/read2 are paths ON Sapelo2
+  manifest: data/sapelo2_manifest.csv
   sequencing_type: paired_end
   remote_data: true                      # FASTQ already on the cluster -> no upload
 
@@ -19,16 +19,13 @@ execution:
   threads: 8
 
 tools:
-  qc: {fastqc: true, fastp: true, multiqc: true}
-  host_removal:
-    tool: bowtie2
-    host_reference: /scratch/sp96859/refs/host_bowtie2_index   # TODO
+  qc: {fastqc: false, fastp: false, multiqc: false}
+  host_removal: {tool: minimap2, host_reference: ""}
   viral_detection:
-    tools: [kraken2, gottcha2]
-    kraken2_db: /scratch/sp96859/db/kraken2_viral              # TODO
-    gottcha2_db: /scratch/sp96859/db/gottcha2/RefSeq-r90.cg.species   # TODO
-  assembly: {enabled: true, assembler: megahit}
-  novel_virus_screening: {enabled: true, tools: [checkv]}
+    tools: [gottcha2]
+    gottcha2_db: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species
+  assembly: {enabled: false, assembler: megahit}
+  novel_virus_screening: {enabled: false, tools: [checkv]}
 
 risk:
   high_risk_pathogens: [SARS-CoV-2, Influenza A virus, Influenza B virus, Norovirus, Enterovirus]
@@ -45,17 +42,22 @@ hpc:
   user: sp96859
   remote_base: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS
   partition: bahl_p
-  conda_env: /home/sp96859/.conda/envs/gottcha2_env
-  # Shell lines prepended to every SLURM script so `conda activate` works.
-  # TODO: confirm the conda module name on Sapelo2 (e.g. Miniconda3).
-  env_setup:
-    - "ml Miniconda3"        # or: source /apps/.../conda/etc/profile.d/conda.sh
+  # GOTTCHA2-only: run a single job. (Add kraken2/host_removal/novel_virus later.)
+  steps: [gottcha2]
+  # GOTTCHA2's minimap2 index is ~94 GB -> needs a high-memory allocation.
+  # NOTE: verify bahl_p nodes provide this much RAM (else use a highmem partition).
+  step_resources:
+    gottcha2: {mem: "120G", cpus: 16, time: "12:00:00"}
+  # Per-step environment: prepend the right conda env's bin to PATH (no conda init).
+  step_env:
+    gottcha2: ["export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"]
+    kraken2:  ["export PATH=/home/sp96859/.conda/envs/kraken2_env/bin:$PATH"]
+    host_removal: ["export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"]
+    novel_virus: ["export PATH=/home/sp96859/.conda/envs/megahit_env/bin:$PATH"]
   retries: 3
   poll_interval_s: 60
   max_wait_s: 86400
-  # SSH connection multiplexing: authenticate (Duo) once, reuse for the run.
   ssh_control: true
-  ssh_control_path: ~/.ssh/metamavs-cm-%r@%h:%p
+  ssh_control_path: ~/.ssh/mm-sapelo2
   ssh_control_persist: 8h
-  # Add ProxyJump / IdentityFile here if your ~/.ssh/config doesn't already.
   ssh_opts: []

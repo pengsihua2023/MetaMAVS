@@ -107,10 +107,23 @@ class HPCConfig(BaseModel):
     user: str | None = None
     remote_base: str = "~/metamavs_runs"
     partition: str = "batch"
+    # Default SLURM resources for every job (override per step via step_resources).
+    cpus: int = Field(default=8, ge=1)
+    mem: str = "32G"
+    time: str = "24:00:00"
+    # Per-step resource overrides, e.g. {"gottcha2": {"mem": "120G", "cpus": 16}}.
+    step_resources: dict[str, dict] = Field(default_factory=dict)
     conda_env: str | None = None
     modules: list[str] = Field(default_factory=list)
     # Shell lines prepended to every SLURM script (e.g. source conda profile).
     env_setup: list[str] = Field(default_factory=list)
+    # Which remote steps to run (None = derive from tools config). Lets you run a
+    # minimal pipeline, e.g. ["gottcha2"]. Valid: qc, host_removal, kraken2,
+    # gottcha2, novel_virus.
+    steps: list[str] | None = None
+    # Per-step environment setup lines (override env_setup). Each tool can use its
+    # own conda env, e.g. {"gottcha2": ["export PATH=.../gottcha2_env/bin:$PATH"]}.
+    step_env: dict[str, list[str]] = Field(default_factory=dict)
     retries: int = Field(default=3, ge=0)
     poll_interval_s: int = Field(default=30, ge=1)
     max_wait_s: int = Field(default=86400, ge=1)

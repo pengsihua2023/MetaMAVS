@@ -66,12 +66,12 @@ def test_hpc_job_failure_degrades_gracefully(tmp_path):
     cfg_path = _hpc_config(tmp_path)
     # Force the viral_detection job to FAIL via config (mock backend).
     data = yaml.safe_load(Path(cfg_path).read_text())
-    data["hpc"]["mock_fail_jobs"] = ["viral_detection"]
+    data["hpc"]["mock_fail_jobs"] = ["kraken2"]  # detection job is per-tool now
     Path(cfg_path).write_text(yaml.safe_dump(data))
     cfg = load_config(cfg_path)
 
     final = run_local_workflow(cfg, config_path="hpc.yaml", dry_run=False, run_id="run_hpc_fail")
 
     assert final["workflow_status"] in {"completed", "completed_with_warnings"}
-    assert "viral_detection" in final["remote_execution_result"]["failed"]
+    assert "kraken2" in final["remote_execution_result"]["failed"]
     assert Path(final["markdown_report_path"]).exists()
