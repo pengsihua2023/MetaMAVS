@@ -30,6 +30,7 @@ class RemoteJobSpec(BaseModel):
     resources: ResourceSpec = Field(default_factory=ResourceSpec)
     modules: list[str] = Field(default_factory=list)
     conda_env: str | None = None
+    env_setup: list[str] = Field(default_factory=list)   # shell lines run before tools (e.g. source conda)
 
 
 class SlurmJobStatus(BaseModel):

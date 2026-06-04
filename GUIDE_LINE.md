@@ -102,8 +102,14 @@ MetaMAVS 主体留在本地;只有自包含的 SLURM 脚本 + 输入跨到集群
   防御式解析器,产出供现有 taxonomy/abundance/risk agent 使用的表。
 - 新增 `execution.mode: hpc` + `hpc:` 配置;`input.remote_data`(数据已在集群);
   `mode_router` 选择本地 vs 远程,**不改动 Phase 1/2**。
-- 新增 17 个测试,含用 `MockBackend` + fixtures 的完整 hpc 模式集成测试(无需真集群)。共 67 个全绿。
-- 真集群加固待办:敲定各工具的远程命令参数,跑一次受守卫的真实 SSH 冒烟测试。
+- 新增 17 个测试,含用 `MockBackend` + fixtures 的完整 hpc 模式集成测试(无需真集群)。
+
+**真集群加固(UGA GACRC Sapelo2):**
+- SSH ControlMaster 连接复用,Duo 2FA 每次运行只需认证一次;`metamavs remote-check`
+  在运行前诊断 ssh/调度器/路径/conda 环境。
+- 用 conda 环境执行(`env_setup` + `conda activate`)而非 module;新增 GOTTCHA2 命令生成器与解析器,与 Kraken2/Bracken 并存。
+- `configs/sapelo2_config.yaml`(host/user/分区 `bahl_p`/remote_base/conda 环境已填好;数据库路径标 TODO)。共 72 个测试全绿。
+- 待办(需在集群上、由你来做):填好 DB/宿主参考/manifest 路径,确认 conda module 名,然后跑 `remote-check` 和一次小样本真实冒烟运行。
 
 ### Phase 4 — 智能解释(LLM)⬜
 在选定节点内接入 LLM 推理(此时才可能引入 LangChain / LLM SDK):

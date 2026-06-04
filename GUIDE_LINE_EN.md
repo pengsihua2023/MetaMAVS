@@ -138,8 +138,16 @@ inputs cross to the cluster; results are downloaded and parsed locally.
   on the cluster; `mode_router` selects local vs remote without touching Phase 1/2.
 - 17 new tests incl. a full hpc-mode integration run via `MockBackend` + fixtures
   (no real cluster). 67 tests total, all passing.
-- Remaining for "real cluster" hardening: finalize per-tool remote command flags
-  and run a guarded live-SSH smoke test.
+
+**Real-cluster hardening (UGA GACRC Sapelo2):**
+- SSH ControlMaster multiplexing so Duo 2FA is entered **once** per run;
+  `metamavs remote-check` diagnoses ssh/scheduler/paths/conda-env before running.
+- conda-env execution (`env_setup` + `conda activate`) instead of modules;
+  GOTTCHA2 command generator + parser added alongside Kraken2/Bracken.
+- `configs/sapelo2_config.yaml` (host/user/partition `bahl_p`/remote_base/conda
+  env prefilled; DB paths marked TODO). 72 tests total, all passing.
+- Remaining (user-side, needs the cluster): fill DB/host-ref/manifest paths,
+  confirm the conda module name, then run `remote-check` and a small live smoke run.
 
 ### Phase 4 — Intelligent Interpretation (LLM) ⬜
 Inject LLM reasoning inside selected nodes (LangChain / an LLM SDK may be

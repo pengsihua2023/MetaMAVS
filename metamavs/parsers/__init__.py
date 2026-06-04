@@ -11,6 +11,7 @@ from __future__ import annotations
 from .checkv import parse_checkv
 from .diamond import parse_diamond
 from .fastqc import parse_fastqc
+from .gottcha2 import parse_gottcha2
 from .host_removal import parse_flagstat
 from .kraken2 import parse_bracken, parse_kraken2
 
@@ -20,6 +21,7 @@ PARSERS = {
     "flagstat": ("host_removal", parse_flagstat),
     "kraken2.report": ("kraken2", parse_kraken2),
     "bracken": ("bracken", parse_bracken),
+    "gottcha2.tsv": ("gottcha2", parse_gottcha2),
     "diamond.tsv": ("diamond", parse_diamond),
     "checkv": ("checkv", parse_checkv),
 }
@@ -30,6 +32,7 @@ __all__ = [
     "parse_flagstat",
     "parse_kraken2",
     "parse_bracken",
+    "parse_gottcha2",
     "parse_diamond",
     "parse_checkv",
 ]

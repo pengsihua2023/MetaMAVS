@@ -45,6 +45,7 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     host_per_sample: dict[str, dict] = {}
     kraken_rows: list[dict] = []
     bracken_by_sample: dict[str, list[dict]] = {}
+    gottcha2_rows: list[dict] = []
     warnings: list[str] = []
 
     for d in downloaded:
@@ -67,6 +68,8 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             kraken_rows.extend(out["records"])
         elif tool == "bracken":
             bracken_by_sample.setdefault(sid, []).extend(out["records"])
+        elif tool == "gottcha2":
+            gottcha2_rows.extend(out["records"])
 
     update: dict[str, Any] = {"parse_results": parse_results}
 
@@ -95,7 +98,7 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         write_json(run_dir / "intermediate" / "host_removal_summary.json", hr_summary)
         update["host_removal_summary"] = hr_summary
 
-    # --- viral hits (prefer Bracken per sample) -------------------------
+    # --- viral hits (Kraken2/Bracken + GOTTCHA2; Bracken supersedes Kraken2) --
     raw_hits: list[dict] = []
     samples_with_bracken = set(bracken_by_sample)
     for row in kraken_rows:
@@ -103,11 +106,19 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             raw_hits.append(row)
     for rows in bracken_by_sample.values():
         raw_hits.extend(rows)
+    raw_hits.extend(gottcha2_rows)
 
     if raw_hits:
         raw_path = write_csv(run_dir / "tables" / "raw_viral_hits.csv", raw_hits)
-        agg: dict[str, dict] = {}
+        # Dedupe across tools: per (sample, taxon) keep the max reads (best tool),
+        # then aggregate across samples -- avoids double-counting multi-tool hits.
+        best: dict[tuple, dict] = {}
         for h in raw_hits:
+            key = (h["sample_id"], h["taxon_name"])
+            if key not in best or h["reads"] > best[key]["reads"]:
+                best[key] = h
+        agg: dict[str, dict] = {}
+        for h in best.values():
             k = h["taxon_name"]
             a = agg.setdefault(k, {"taxon_name": k, "family": h["family"], "taxid": h["taxid"],
                                    "genome_length_kb": h.get("genome_length_kb", 0.0),
@@ -117,11 +128,12 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             a["n_samples"] += 1
         candidates = sorted(agg.values(), key=lambda d: d["total_reads"], reverse=True)
         cand_path = write_csv(run_dir / "tables" / "candidate_viral_taxa.csv", candidates)
+        tools_used = sorted({h["tool"] for h in raw_hits})
         update["raw_viral_hits_path"] = str(raw_path)
         update["candidate_viral_taxa_path"] = str(cand_path)
-        update["viral_detection_summary"] = {"tools": ["kraken2", "bracken"], "exec_mode": "hpc",
+        update["viral_detection_summary"] = {"tools": tools_used, "exec_mode": "hpc",
                                              "n_raw_hits": len(raw_hits), "n_candidate_taxa": len(candidates),
-                                             "note": "Parsed from real Kraken2/Bracken output."}
+                                             "note": "Parsed from real Kraken2/Bracken/GOTTCHA2 output."}
 
     n_ok = sum(1 for r in parse_results if r.get("ok"))
     logger.info("Parsed %d file(s) (%d ok); %d viral hit row(s)", len(parse_results), n_ok, len(raw_hits))

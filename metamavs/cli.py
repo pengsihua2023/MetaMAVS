@@ -156,6 +156,44 @@ def tools(
     _echo(f"\n{n_ok}/{len(seen)} available. Missing tools trigger graceful fallback in --execute mode.")
 
 
+@app.command(name="remote-check")
+def remote_check(
+    config: Path = typer.Option(..., "--config", "-c", exists=True, help="Path to YAML config."),
+):
+    """Diagnose HPC readiness over SSH (connectivity, scheduler, paths, conda env).
+
+    The first connection triggers interactive auth (e.g. GACRC Duo); with SSH
+    ControlMaster enabled it is reused for the rest of the run.
+    """
+
+    from .remote.backends import SSHBackend, build_ssh_backend_opts
+
+    setup_logging(level=logging.INFO)
+    cfg = load_config(config)
+    hpc = cfg.hpc
+    if hpc.backend != "ssh":
+        _echo(f"hpc.backend is '{hpc.backend}'; remote-check only applies to ssh.")
+        raise typer.Exit(code=1)
+    if not hpc.host:
+        _echo("hpc.host is not set.")
+        raise typer.Exit(code=1)
+
+    backend = SSHBackend(host=hpc.host, user=hpc.user,
+                         ssh_opts=build_ssh_backend_opts(hpc.model_dump()), retries=hpc.retries)
+    _echo(f"Checking {hpc.user or ''}@{hpc.host} (first connect may prompt for Duo/2FA)…")
+    checks = backend.connectivity_check(hpc.remote_base, hpc.conda_env)
+
+    all_ok = True
+    for name, (ok, detail) in checks.items():
+        all_ok = all_ok and ok
+        _echo(f"  [{'OK ' if ok else 'FAIL'}] {name}" + (f"  ({detail})" if detail else ""))
+    if all_ok:
+        _echo("\nHPC looks ready. You can run:  metamavs run --config <cfg> --execute")
+    else:
+        _echo("\nSome checks failed — fix the above before an --execute run.")
+        raise typer.Exit(code=1)
+
+
 @app.command()
 def slurm(
     config: Path = typer.Option(..., "--config", "-c", exists=True, help="Path to YAML config."),

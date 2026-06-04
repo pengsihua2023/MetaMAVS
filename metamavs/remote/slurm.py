@@ -31,11 +31,13 @@ def render_job_script(spec: RemoteJobSpec, log_dir: str) -> str:
         "set -euo pipefail",
         "",
     ]
+    for setup in spec.env_setup:
+        lines.append(setup)
     for mod in spec.modules:
         lines.append(f"module load {mod}")
     if spec.conda_env:
         lines.append(f"conda activate {spec.conda_env}")
-    if spec.modules or spec.conda_env:
+    if spec.env_setup or spec.modules or spec.conda_env:
         lines.append("")
     lines += list(spec.payload) + [""]
     return "\n".join(lines)

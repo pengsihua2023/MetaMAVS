@@ -52,6 +52,7 @@ class ViralDetectionConfig(BaseModel):
     tools: list[str] = Field(default_factory=lambda: ["kraken2", "diamond"])
     kraken2_db: str | None = None
     diamond_db: str | None = None
+    gottcha2_db: str | None = None
 
 
 class AssemblyConfig(BaseModel):
@@ -108,9 +109,17 @@ class HPCConfig(BaseModel):
     partition: str = "batch"
     conda_env: str | None = None
     modules: list[str] = Field(default_factory=list)
+    # Shell lines prepended to every SLURM script (e.g. source conda profile).
+    env_setup: list[str] = Field(default_factory=list)
     retries: int = Field(default=3, ge=0)
     poll_interval_s: int = Field(default=30, ge=1)
     max_wait_s: int = Field(default=86400, ge=1)
+    # SSH connection multiplexing: authenticate (incl. Duo 2FA) ONCE, then reuse
+    # the master connection for every subsequent ssh/rsync invocation.
+    ssh_control: bool = True
+    ssh_control_path: str = "~/.ssh/metamavs-cm-%r@%h:%p"
+    ssh_control_persist: str = "8h"
+    ssh_opts: list[str] = Field(default_factory=list)  # extra raw ssh -o options
     # For backend == "mock": directory of fake tool outputs used as fixtures,
     # and an optional list of job_names to force-FAIL (to exercise recovery).
     mock_fixtures_dir: str | None = None

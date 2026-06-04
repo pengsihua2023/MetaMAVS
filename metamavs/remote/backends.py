@@ -11,6 +11,7 @@ import shutil
 import subprocess
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any
 
 from ..utils.logging_utils import get_logger
 from .slurm import build_sbatch_command, parse_sacct
@@ -111,6 +112,27 @@ class SSHBackend(RemoteBackend):
             result.append(st)
         return result
 
+    def connectivity_check(self, remote_base: str, conda_env: str | None = None) -> dict:
+        """Diagnose readiness: ssh reachable, scheduler present, base writable, env exists.
+
+        The first call triggers interactive auth (e.g. GACRC Duo); with SSH
+        ControlMaster enabled, subsequent calls reuse the connection.
+        """
+
+        checks: dict[str, Any] = {}
+        rc, out, err = self.run("echo metamavs_ok")
+        checks["ssh"] = (rc == 0 and "metamavs_ok" in out, err.strip()[:200])
+        if not checks["ssh"][0]:
+            return checks
+        rc, out, _ = self.run("command -v sbatch && command -v sacct && command -v rsync")
+        checks["scheduler_tools"] = (rc == 0, out.strip())
+        rc, _, err = self.run(f"mkdir -p {remote_base} && test -w {remote_base}")
+        checks["remote_base_writable"] = (rc == 0, remote_base)
+        if conda_env:
+            rc, _, _ = self.run(f"test -d {conda_env}")
+            checks["conda_env"] = (rc == 0, conda_env)
+        return checks
+
 
 # --------------------------------------------------------------------------- #
 class MockBackend(RemoteBackend):
@@ -201,4 +223,27 @@ def make_backend(state: dict) -> RemoteBackend:
     if not host:
         raise ValueError("hpc.host must be set for the ssh backend")
     opts: list[str] = []
+    if hpc.get("ssh_control", True):
+        opts += [
+            "-o", "ControlMaster=auto",
+            "-o", f"ControlPath={hpc.get('ssh_control_path', '~/.ssh/metamavs-cm-%r@%h:%p')}",
+            "-o", f"ControlPersist={hpc.get('ssh_control_persist', '8h')}",
+        ]
+    for o in hpc.get("ssh_opts", []):
+        opts += str(o).split()
     return SSHBackend(host=host, user=hpc.get("user"), ssh_opts=opts, retries=int(hpc.get("retries", 3)))
+
+
+def build_ssh_backend_opts(hpc: dict) -> list[str]:
+    """Expose the ssh option list (used by the CLI remote-check and tests)."""
+
+    opts: list[str] = []
+    if hpc.get("ssh_control", True):
+        opts += [
+            "-o", "ControlMaster=auto",
+            "-o", f"ControlPath={hpc.get('ssh_control_path', '~/.ssh/metamavs-cm-%r@%h:%p')}",
+            "-o", f"ControlPersist={hpc.get('ssh_control_persist', '8h')}",
+        ]
+    for o in hpc.get("ssh_opts", []):
+        opts += str(o).split()
+    return opts

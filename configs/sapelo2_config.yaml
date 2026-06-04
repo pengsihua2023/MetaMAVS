@@ -1,0 +1,61 @@
+# MetaMAVS — UGA GACRC Sapelo2 configuration (Phase 3, real cluster).
+# Controller runs on your laptop and submits SLURM jobs to Sapelo2 over SSH.
+# First connection triggers Duo 2FA; SSH ControlMaster then reuses it.
+#
+# >>> FILL IN the paths marked TODO before an --execute run. <<<
+project:
+  name: MetaMAVS
+  run_name: sapelo2_run
+  output_dir: reports/sapelo2_run
+
+input:
+  manifest: data/example_manifest.csv   # TODO: a manifest whose read1/read2 are paths ON Sapelo2
+  sequencing_type: paired_end
+  remote_data: true                      # FASTQ already on the cluster -> no upload
+
+execution:
+  dry_run: false
+  mode: hpc
+  threads: 8
+
+tools:
+  qc: {fastqc: true, fastp: true, multiqc: true}
+  host_removal:
+    tool: bowtie2
+    host_reference: /scratch/sp96859/refs/host_bowtie2_index   # TODO
+  viral_detection:
+    tools: [kraken2, gottcha2]
+    kraken2_db: /scratch/sp96859/db/kraken2_viral              # TODO
+    gottcha2_db: /scratch/sp96859/db/gottcha2/RefSeq-r90.cg.species   # TODO
+  assembly: {enabled: true, assembler: megahit}
+  novel_virus_screening: {enabled: true, tools: [checkv]}
+
+risk:
+  high_risk_pathogens: [SARS-CoV-2, Influenza A virus, Influenza B virus, Norovirus, Enterovirus]
+  review_on_high_risk: true
+  review_on_novel_candidates: true
+  review_on_qc_failure: true
+
+report:
+  formats: [markdown, html]
+
+hpc:
+  backend: ssh
+  host: sapelo2.gacrc.uga.edu
+  user: sp96859
+  remote_base: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS
+  partition: bahl_p
+  conda_env: /home/sp96859/.conda/envs/gottcha2_env
+  # Shell lines prepended to every SLURM script so `conda activate` works.
+  # TODO: confirm the conda module name on Sapelo2 (e.g. Miniconda3).
+  env_setup:
+    - "ml Miniconda3"        # or: source /apps/.../conda/etc/profile.d/conda.sh
+  retries: 3
+  poll_interval_s: 60
+  max_wait_s: 86400
+  # SSH connection multiplexing: authenticate (Duo) once, reuse for the run.
+  ssh_control: true
+  ssh_control_path: ~/.ssh/metamavs-cm-%r@%h:%p
+  ssh_control_persist: 8h
+  # Add ProxyJump / IdentityFile here if your ~/.ssh/config doesn't already.
+  ssh_opts: []

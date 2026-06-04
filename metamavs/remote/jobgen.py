@@ -48,6 +48,7 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
     res_defaults = dict(partition=hpc.get("partition", "batch"))
     modules = hpc.get("modules", [])
     conda_env = hpc.get("conda_env")
+    env_setup = hpc.get("env_setup", [])
     scripts_local = run_dir / "remote" / "scripts"
     log_dir = f"{rrun}/logs"
 
@@ -57,6 +58,7 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
     def finalize(spec: RemoteJobSpec) -> RemoteJobSpec:
         spec.modules = modules
         spec.conda_env = conda_env
+        spec.env_setup = env_setup
         script = render_job_script(spec, log_dir=log_dir)
         write_text(spec.script_local, script)
         return spec
@@ -90,17 +92,29 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
         script_remote=f"{rrun}/scripts/host_removal.sh", resources=ResourceSpec(**res_defaults),
     )))
 
-    # --- viral_detection (depends host_removal) --------------------------
+    # --- viral_detection (depends host_removal): Kraken2/Bracken + GOTTCHA2 ---
     vd = tools_cfg.get("viral_detection", {})
+    tools = [t.lower() for t in vd.get("tools", ["kraken2"])]
     k2db = vd.get("kraken2_db") or "$KRAKEN2_DB"
+    g2db = vd.get("gottcha2_db") or "$GOTTCHA2_DB"
+    threads = cfg.get("execution", {}).get("threads", 8)
     vd_out, vd_cmds = [], [f"mkdir -p {rrun}/results/viral_detection"]
     for s in samples:
         sid = s["sample_id"]
-        rep = f"{rrun}/results/viral_detection/{sid}.kraken2.report"
-        vd_cmds.append(f"kraken2 --db {k2db} --report {rep} --output {rrun}/work/{sid}.k2.out "
-                       f"--paired {rrun}/work/{sid}_nonhost_R1.fastq.gz {rrun}/work/{sid}_nonhost_R2.fastq.gz")
-        vd_cmds.append(f"bracken -d {k2db} -i {rep} -o {rrun}/results/viral_detection/{sid}.bracken -r 150 -l S")
-        vd_out += [rep, f"{rrun}/results/viral_detection/{sid}.bracken"]
+        r1 = f"{rrun}/work/{sid}_nonhost_R1.fastq.gz"
+        r2 = f"{rrun}/work/{sid}_nonhost_R2.fastq.gz"
+        if "kraken2" in tools:
+            rep = f"{rrun}/results/viral_detection/{sid}.kraken2.report"
+            vd_cmds.append(f"kraken2 --db {k2db} --threads {threads} --report {rep} "
+                           f"--output {rrun}/work/{sid}.k2.out --paired {r1} {r2}")
+            vd_cmds.append(f"bracken -d {k2db} -i {rep} -o {rrun}/results/viral_detection/{sid}.bracken -r 150 -l S")
+            vd_out += [rep, f"{rrun}/results/viral_detection/{sid}.bracken"]
+        if "gottcha2" in tools:
+            g2out = f"{rrun}/results/viral_detection/{sid}.gottcha2.tsv"
+            vd_cmds.append(f"gottcha2.py -i {r1} {r2} -d {g2db} -t {threads} "
+                           f"-o {rrun}/work/{sid}.gottcha2 -p {sid}")
+            vd_cmds.append(f"cp {rrun}/work/{sid}.gottcha2/{sid}.tsv {g2out}")
+            vd_out.append(g2out)
     specs.append(finalize(RemoteJobSpec(
         job_name="viral_detection", step="viral_detection", payload=vd_cmds, output_files=vd_out,
         depends_on=["host_removal"], script_local=str(scripts_local / "viral_detection.sh"),
