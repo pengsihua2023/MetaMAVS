@@ -26,6 +26,33 @@ def test_parse_gottcha2_species_only():
     assert flu["tool"] == "gottcha2"
 
 
+def test_gottcha2_viral_lineage_filter(tmp_path):
+    """With a sibling lineage.tsv, GOTTCHA2 parsing keeps only viral-superkingdom
+    species (bacteria/archaea dropped)."""
+    summary = tmp_path / "s1.gottcha2.tsv"
+    summary.write_text(
+        "LEVEL\tNAME\tTAXID\tREAD_COUNT\n"
+        "species\tJeotgalibaca porci\t1868793\t218087\n"      # bacterium -> drop
+        "species\tInfluenza A virus\t11320\t3400\n"            # virus -> keep
+    )
+    lineage = tmp_path / "s1.gottcha2.lineage.tsv"
+    lineage.write_text(
+        "8.36\tsuperkingdom\t2\tBacteria\tspecies\t1868793\tJeotgalibaca porci\n"
+        "0.02\tsuperkingdom\t10239\tViruses\tspecies\t11320\tInfluenza A virus\n"
+    )
+    out = parse_gottcha2(str(summary), "s1")
+    names = {r["taxon_name"] for r in out["records"]}
+    assert names == {"Influenza A virus"}           # bacterium filtered out
+
+
+def test_gottcha2_no_lineage_keeps_all_and_warns(tmp_path):
+    summary = tmp_path / "s1.gottcha2.tsv"
+    summary.write_text("LEVEL\tNAME\tTAXID\tREAD_COUNT\nspecies\tInfluenza A virus\t11320\t3400\n")
+    out = parse_gottcha2(str(summary), "s1")
+    assert {r["taxon_name"] for r in out["records"]} == {"Influenza A virus"}
+    assert any("lineage" in w for w in out["result"].warnings)
+
+
 def test_render_script_with_env_setup_and_conda():
     spec = RemoteJobSpec(
         job_name="qc", step="qc", script_local="/x.sh", script_remote="/r/x.sh",

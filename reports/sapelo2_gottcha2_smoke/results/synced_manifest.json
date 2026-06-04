@@ -1,15 +1,13 @@
 {
-  "run_id": "run_20260604_165039",
+  "run_id": "run_20260604_165318",
   "downloaded": [
     {
-      "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260604_165039/results/viral_detection/llnl_66ce4dde.gottcha2.tsv",
+      "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260604_165318/results/viral_detection/llnl_66ce4dde.gottcha2.tsv",
       "local_path": "reports/sapelo2_gottcha2_smoke/results/raw/gottcha2/llnl_66ce4dde.gottcha2.tsv",
-      "size": 0,
-      "ok": false
+      "size": 120317,
+      "ok": true
     }
   ],
-  "missing": [
-    "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260604_165039/results/viral_detection/llnl_66ce4dde.gottcha2.tsv"
-  ],
-  "complete": false
+  "missing": [],
+  "complete": true
 }

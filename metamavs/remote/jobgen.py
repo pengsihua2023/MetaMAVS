@@ -149,10 +149,13 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
             sid = s["sample_id"]
             r1, r2 = reads_for(s)
             g2out = f"{rrun}/results/viral_detection/{sid}.gottcha2.tsv"
+            g2lin = f"{rrun}/results/viral_detection/{sid}.gottcha2.lineage.tsv"
             cmds.append(f"gottcha2.py -i {r1} {r2} -d {g2db} -l {g2level} -t {threads} "
                         f"-o {rrun}/work/{sid}.gottcha2 -p {sid}")
             cmds.append(f"cp {rrun}/work/{sid}.gottcha2/{sid}.tsv {g2out}")
-            out.append(g2out)
+            # lineage table -> used downstream to keep only viral-superkingdom taxa
+            cmds.append(f"cp {rrun}/work/{sid}.gottcha2/{sid}.lineage.tsv {g2lin}")
+            out += [g2out, g2lin]
         add("gottcha2", "gottcha2", cmds, out, host_dep)
 
     # --- novel_virus (assembly + checkv) ---
