@@ -82,7 +82,7 @@ real capabilities step by step. There are **4 phases total**:
 | **Phase 1** | Minimal Runnable Prototype | Deterministic, local, dry-run run of the full LangGraph flow, with reports + tests | ❌ No | ❌ No | ✅ **Done** |
 | **Phase 2** | Real Command Execution | Actually execute the generated commands; tool checks, validation, recovery, SLURM | ⚠️ Some | ❌ No | ✅ **Done** |
 | **Phase 3** | Bioinformatics Expansion (hybrid HPC) | Local controller submits SLURM jobs to a remote HPC, downloads results, parses them locally | ✅ Yes (on HPC) | ❌ No | ✅ **Done (v1)** |
-| **Phase 4** | Intelligent Interpretation | Inject LLM reasoning into selected nodes for interpretation/narrative/prose | ✅ Yes | ✅ Yes (optional) | ⬜ Not started |
+| **Phase 4** | Intelligent Interpretation | Optional LLM (Claude) writes the surveillance narrative; deterministic risk stays authoritative | ✅ Yes | ✅ Yes (optional) | ✅ **Done** |
 
 Each phase is detailed below.
 
@@ -149,13 +149,28 @@ inputs cross to the cluster; results are downloaded and parsed locally.
 - Remaining (user-side, needs the cluster): fill DB/host-ref/manifest paths,
   confirm the conda module name, then run `remote-check` and a small live smoke run.
 
-### Phase 4 — Intelligent Interpretation (LLM) ⬜
-Inject LLM reasoning inside selected nodes (LangChain / an LLM SDK may be
-introduced at this point):
-- Taxonomy interpretation, false-positive explanation
-- Risk explanation and surveillance narrative writing
-- Report prose polishing, public-health alert summarization
-- Literature-aware pathogen interpretation
+### Phase 4 — Intelligent Interpretation (LLM) ✅ (Done)
+An **optional** LLM interpretation layer (Anthropic Claude), fully additive:
+- `metamavs/llm/` — defensive client (loads `.env` with `override=True`,
+  `claude-opus-4-8` + adaptive thinking, cache_control breakpoint on a static
+  cautious system prompt; any failure → `None`) + per-run user-prompt builder.
+- New `llm_interpretation` node between risk/human-review and the report writer;
+  writes an advisory "AI-Assisted Interpretation" section (Executive Summary,
+  Risk Interpretation, Recommended Actions, Caveats). The **deterministic risk
+  assessment stays authoritative**.
+- `LLMConfig` (`enabled` off by default, `model`/`effort`/`max_tokens`); `[llm]`
+  extra (`anthropic`, `python-dotenv`); `.env` gitignored.
+- **Graceful fallback**: no key / `enabled=false` / SDK or API failure → clean
+  no-op; Phases 1–3 remain key-free. 6 new tests (90 total).
+- Live-verified with a real key: Claude produced a scientifically-cautious
+  narrative (detected-signal framing, per-pathogen RT-qPCR confirmation, phages
+  separated, explicit caveats).
+
+> Caching note: the static system prompt (~541 tokens) is below Anthropic's
+> ~1024-token cache minimum, so the breakpoint is a no-op at this size — placed
+> correctly, it auto-engages when the cached prefix grows (e.g. literature
+> context). Future work: taxonomy/false-positive interpretation, literature-aware
+> pathogen context, public-health alert summarization.
 
 **Principle**: even at Phase 4, Phases 1–3 keep "runnable without an API key";
 the LLM is an optional enhancement, not a hard dependency.

@@ -59,7 +59,7 @@ MetaMAVS 采用**渐进式交付**:先跑通骨架,再逐步加真实能力。**
 | **Phase 1** | 最小可运行原型 | 确定性、本地、dry-run 跑通整条 LangGraph 流程,出报告+测试 | ❌ 不需要 | ❌ 不需要 | ✅ **已完成** |
 | **Phase 2** | 真实命令执行 | 把 dry-run 生成的命令真正跑起来,加工具检查、校验、恢复、SLURM | ⚠️ 需要部分工具 | ❌ 不需要 | ✅ **已完成** |
 | **Phase 3** | 生信工具扩展(混合 HPC) | 本地控制端提交 SLURM 作业到远程 HPC,下载结果,本地解析 | ✅ 需要(在 HPC 上) | ❌ 不需要 | ✅ **已完成(v1)** |
-| **Phase 4** | 智能解释 | 在选定节点接入 LLM 做解释/叙述/报告润色 | ✅ 需要 | ✅ 需要(可选) | ⬜ 未开始 |
+| **Phase 4** | 智能解释 | 可选 LLM(Claude)生成监测叙事;确定性风险评估仍为权威 | ✅ 需要 | ✅ 需要(可选) | ✅ **已完成** |
 
 下面逐个展开。
 
@@ -111,12 +111,18 @@ MetaMAVS 主体留在本地;只有自包含的 SLURM 脚本 + 输入跨到集群
 - `configs/sapelo2_config.yaml`(host/user/分区 `bahl_p`/remote_base/conda 环境已填好;数据库路径标 TODO)。共 72 个测试全绿。
 - 待办(需在集群上、由你来做):填好 DB/宿主参考/manifest 路径,确认 conda module 名,然后跑 `remote-check` 和一次小样本真实冒烟运行。
 
-### Phase 4 — 智能解释(LLM)⬜
-在选定节点内接入 LLM 推理(此时才可能引入 LangChain / LLM SDK):
-- 分类学解释、假阳性解释
-- 风险解释与监测叙事写作
-- 报告散文润色、公共卫生预警摘要
-- 结合文献的病原体解读
+### Phase 4 — 智能解释(LLM)✅(已完成)
+一个**可选的** LLM 解释层(Anthropic Claude),完全增量、不破坏既有流程:
+- `metamavs/llm/`:防御式 client(读 `.env`,`override=True`;`claude-opus-4-8` + adaptive thinking;
+  在静态、审慎的系统提示上放 cache_control 断点;任何失败 → 返回 `None`)+ 按运行构建 user prompt。
+- 新增 `llm_interpretation` 节点,位于 风险/人审 与 报告 之间;写一段"AI 辅助解读"
+  (执行摘要、风险解读、推荐行动、注意事项)。**确定性风险评估仍为权威**。
+- `LLMConfig`(默认 `enabled: false`,可配 model/effort/max_tokens);`[llm]` 可选依赖;`.env` 已 gitignore。
+- **优雅降级**:无 key / 未启用 / SDK 或 API 失败 → 干净 no-op;Phase 1–3 仍无需 key。新增 6 个测试(共 90 个)。
+- 已用真实 key 实跑验证:Claude 生成了科学审慎的叙事(检测信号措辞、逐病原体 RT-qPCR 确认建议、噬菌体分列、明确注意事项)。
+
+> 缓存说明:静态系统提示(~541 tokens)低于 Anthropic ~1024 token 的缓存下限,所以当前断点是 no-op——
+> 位置放对了,等缓存前缀变大(如加入文献上下文)会自动生效。后续可做:分类学/假阳性解释、文献感知解读、公共卫生预警摘要。
 
 **原则**:即便到 Phase 4,Phase 1–3 仍保持"无 API key 也能跑";LLM 是可选增强,不是硬依赖。
 
