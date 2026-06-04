@@ -6,9 +6,9 @@
 
 - **Project:** MetaMAVS
 - **Run name:** sapelo2_genome72
-- **Run id:** run_20260604_190703
+- **Run id:** run_20260604_201854
 - **Mode:** execution
-- **Overall risk:** Low
+- **Overall risk:** High
 
 ## 2. Sample Summary
 
@@ -59,26 +59,27 @@ _No novel candidates above threshold._
 
 ## 8. Epidemiological Risk Assessment
 
-- **Overall risk:** Low
+- **Overall risk:** High
 
 | Taxon | Risk | Reads | Trend | Reasons |
 | --- | --- | --- | --- | --- |
+| Severe acute respiratory syndrome-related coronavirus | High | 52 | stable | matches high-risk pathogen: SARS-CoV-2 |
+| Norwalk virus | High | 26 | stable | matches high-risk pathogen: Norovirus; low read count — recommend confirmatory testing |
 | Obolenskvirus AP22 | Low | 181 | stable | low/uncertain signal |
 | Phikzvirus phiKZ | Low | 155 | stable | low/uncertain signal |
 | Human mastadenovirus F | Low | 116 | stable | low/uncertain signal |
-| Pepper mild mottle virus | Low | 66 | stable | low/uncertain signal |
-| Severe acute respiratory syndrome-related coronavirus | Low | 52 | stable | low/uncertain signal |
 
 ## 9. Human Review
 
-- **Review required:** False
-- **Decision:** None
-- **Approved for report:** False
-- **Reviewer notes:** None
+- **Review required:** True
+- **Decision:** approved_simulated
+- **Approved for report:** True
+- **Reviewer notes:** Auto-approved in dry-run/non-interactive mode. Triggers: overall risk = High.
 
 ## 10. Recommended Follow-up Actions
 
-- Continue routine surveillance; no high-risk confirmatory testing indicated
+- Confirm Severe acute respiratory syndrome-related coronavirus (High) with targeted RT-qPCR / amplicon sequencing
+- Confirm Norwalk virus (High) with targeted RT-qPCR / amplicon sequencing
 
 ## 11. Warnings
 
@@ -90,7 +91,7 @@ _No novel candidates above threshold._
 - **MetaMAVS version:** 0.1.0
 - **Config:** configs/sapelo2_config.yaml
 - **Run directory:** reports/sapelo2_genome72
-- **Generated (UTC):** 2026-06-04T19:13:19Z
+- **Generated (UTC):** 2026-06-04T20:24:08Z
 
 
 ---
