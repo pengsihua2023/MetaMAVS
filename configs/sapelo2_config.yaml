@@ -23,7 +23,10 @@ tools:
   host_removal: {tool: minimap2, host_reference: ""}
   viral_detection:
     tools: [gottcha2]
-    gottcha2_db: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species
+    # GOTTCHA2 appends .mmi/.stats/.tax.tsv to this prefix (real files are
+    # gottcha_db.species.fna.{mmi,stats,tax.tsv}).
+    gottcha2_db: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species.fna
+    gottcha2_level: species
   assembly: {enabled: false, assembler: megahit}
   novel_virus_screening: {enabled: false, tools: [checkv]}
 

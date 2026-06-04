@@ -143,12 +143,13 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
     if "gottcha2" in steps:
         vd = tools_cfg.get("viral_detection", {})
         g2db = vd.get("gottcha2_db") or "$GOTTCHA2_DB"
+        g2level = vd.get("gottcha2_level", "species")
         out, cmds = [], [f"mkdir -p {rrun}/results/viral_detection {rrun}/work"]
         for s in samples:
             sid = s["sample_id"]
             r1, r2 = reads_for(s)
             g2out = f"{rrun}/results/viral_detection/{sid}.gottcha2.tsv"
-            cmds.append(f"gottcha2.py -i {r1} {r2} -d {g2db} -t {threads} "
+            cmds.append(f"gottcha2.py -i {r1} {r2} -d {g2db} -l {g2level} -t {threads} "
                         f"-o {rrun}/work/{sid}.gottcha2 -p {sid}")
             cmds.append(f"cp {rrun}/work/{sid}.gottcha2/{sid}.tsv {g2out}")
             out.append(g2out)

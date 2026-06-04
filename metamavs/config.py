@@ -53,6 +53,7 @@ class ViralDetectionConfig(BaseModel):
     kraken2_db: str | None = None
     diamond_db: str | None = None
     gottcha2_db: str | None = None
+    gottcha2_level: str = "species"
 
 
 class AssemblyConfig(BaseModel):
