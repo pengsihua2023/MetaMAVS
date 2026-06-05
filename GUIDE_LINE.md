@@ -37,11 +37,11 @@
 其中 `warnings` / `errors` / `execution_log` 用 `Annotated[list, operator.add]` **累加器(reducer)**,所以每个节点只需返回"新增的几条",框架自动追加,不会互相覆盖。
 
 ### 2.3 框架依赖收口到一个文件
-只有 `graph.py` 直接 import LangGraph。12 个 agent 和路由都是普通 Python 函数 → 不依赖框架即可测试,未来升级/替换框架代价最小。
+只有 `graph.py` 直接 import LangGraph。16 个 agent 和路由都是普通 Python 函数 → 不依赖框架即可测试,未来升级/替换框架代价最小。
 
 ### 2.4 关注点分层
 - **编排层**(框架):LangGraph,决定"流程怎么走"。
-- **节点层**(业务):12 个 agent,各做一件分析。
+- **节点层**(业务):16 个 agent,各做一件(分析或远程/IO)。
 - **工具层**(基础设施):logging / 文件 / 命令构造 / 分类学 / 报告渲染。
 - **数据校验层**(工具库):pydantic 只负责"配置和清单合不合法",**不是**编排框架。
 
@@ -67,7 +67,7 @@ MetaMAVS 采用**渐进式交付**:先跑通骨架,再逐步加真实能力。**
 **做了什么**
 - 完整项目骨架 + YAML 配置加载 + 样本清单校验
 - `MetaMAVSState` 状态定义 + LangGraph 图构建/编译
-- 全部 12 个节点的 dry-run 逻辑 + 命令生成
+- 全部 12 个 Phase-1 节点的 dry-run 逻辑 + 命令生成
 - 中间产物落盘(CSV/JSON)+ Markdown/HTML 报告
 - CLI:`metamavs run --dry-run`、`metamavs graph`、`validate`、`slurm`
 - 37 个 pytest 测试全绿
@@ -76,7 +76,7 @@ MetaMAVS 采用**渐进式交付**:先跑通骨架,再逐步加真实能力。**
 
 **完成判定 (Definition of Done)** —— 全部满足:
 - `metamavs run --config configs/example_config.yaml --dry-run` 成功运行
-- LangGraph 图能编译;12 个节点按序执行;条件审核路由生效
+- LangGraph 图能编译;节点按序执行;条件审核路由生效
 - 中间文件生成;最终 Markdown 报告生成
 - config/state/graph/routing/manifest 测试通过;README 完整
 
@@ -151,9 +151,9 @@ Phase 4 (LLM 智能解释)
 │  编排层 / 框架   LangGraph (StateGraph)                  │  graph.py 唯一接触
 │  节点、条件边、checkpoint、HITL、错误路由                 │
 └────────────────────────────────────────────────────────┘
-        ▲ 装配并驱动 12 个节点
+        ▲ 装配并驱动 16 个节点
 ┌────────────────────────────────────────────────────────┐
-│  节点层 / 业务   agents/*.py (12 个 agent)               │  纯函数 (state)->dict
+│  节点层 / 业务   agents/*.py (16 个 agent)               │  纯函数 (state)->dict
 └────────────────────────────────────────────────────────┘
         ▲ 调用
 ┌────────────────────────────────────────────────────────┐
@@ -189,27 +189,37 @@ Phase 4 (LLM 智能解释)
 
 ---
 
-## 6. 工作流结构(12 个节点)
+## 6. 工作流结构(16 个节点)
+
+图里共 **16 个节点**:最初的 12 个(Phase 1)+ 3 个远程 HPC 节点(Phase 3)+ 1 个 LLM 解读节点(Phase 4)。
 
 ### 6.1 主流程
 ```
 START
   → input_manager            (1) 校验输入,产出干净 manifest
-  → qc_agent                 (2) 质控命令 + 通过/失败判定
+  → qc_agent                 (2) 质控命令/解析 + 通过/失败(LLM 评估数据是否足够)
   → host_removal_agent       (3) 去宿主命令 + 非宿主 reads
   → viral_detection_agent    (4) 病毒检测命令 + 命中表
-  → taxonomy_agent           (5) 分类清洗 + 假阳性/噬菌体标记
-  → abundance_agent          (6) RPM 归一化 + 趋势
-  → novel_virus_agent        (7) 组装/筛查命令 + 新型候选
-  → risk_assessment_agent    (8) 四级风险评级 + 是否需人审
+  → [mode_router]
+        ├─ hpc:  remote_execution_agent   (5)  上传 + 提交 sbatch DAG + 监控
+        │        result_sync_agent        (6)  下载 + 完整性校验
+        │        tool_output_parser_agent (7)  解析真实输出 → 标准化表
+        │          → taxonomy_agent
+        └─ local/dry-run:  → taxonomy_agent
+  → taxonomy_agent           (8) 分类清洗 + 噬菌体/假阳性(LLM + NCBI 谱系)
+  → abundance_agent          (9) RPM 归一化 + 趋势(LLM 趋势解读)
+  → novel_virus_agent        (10) 组装/筛查 + 新型候选(LLM 评估)
+  → risk_assessment_agent    (11) 四级风险评级 + 理由(LLM + NCBI)
   → [conditional_review_router]
-        ├─ human_review       (9) 人在回路审核(需要时)
-        └─────────────────────→ report_writer (不需要时直达)
-  → report_writer_agent      (10) Markdown + HTML 报告
-  → final_summary            (11) 终末摘要 + state.json
+        ├─ human_review       (12) 人在回路:auto / interactive / pause 暂停恢复
+        │     └─ pause → END(之后用 `metamavs review` 恢复)
+        └──────────────────────────────────────────────→ llm_interpretation
+  → llm_interpretation       (13) 公共卫生监测叙事(LLM)
+  → report_writer_agent      (14) Markdown + HTML 报告
+  → final_summary            (15) 终末摘要 + state.json
   → END
 
-任何节点出致命错误 → error_handler (12) → 可继续则补报告,否则收尾
+任何节点出致命错误 → error_handler (16) → 可继续则补报告,否则收尾
 ```
 
 ### 6.2 节点职责速查
@@ -281,7 +291,7 @@ MetaMAVS/
     state.py             # MetaMAVSState(TypedDict + reducer)
     routing.py           # 条件路由函数
     graph.py             # ★唯一接触 LangGraph:构建+编译 StateGraph
-    agents/              # 12 个节点,每个一文件
+    agents/              # 16 个节点(含远程+LLM),每个一文件
     utils/               # logging / file / command_runner / taxonomy / report
     workflows/
       local_workflow.py  # 本地执行后端(已用)

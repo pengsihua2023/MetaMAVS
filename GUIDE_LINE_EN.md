@@ -51,13 +51,13 @@ The `warnings` / `errors` / `execution_log` fields use
 no accidental overwrites.
 
 ### 2.3 Framework dependency centralized in one file
-Only `graph.py` imports LangGraph directly. The 12 agents and the routing
+Only `graph.py` imports LangGraph directly. The 16 agents and the routing
 functions are plain Python functions → testable without the framework, and
 future upgrades/replacements stay cheap.
 
 ### 2.4 Separation of concerns by layer
 - **Orchestration layer** (framework): LangGraph, decides "how the flow goes".
-- **Node layer** (business): 12 agents, each does one analysis step.
+- **Node layer** (business): 16 agents, each does one step (analysis or remote/IO).
 - **Utility layer** (infrastructure): logging / files / command building /
   taxonomy / report rendering.
 - **Data validation layer** (a tool library): pydantic only checks whether the
@@ -90,7 +90,7 @@ Each phase is detailed below.
 **What was built**
 - Full project skeleton + YAML config loading + sample manifest validation
 - `MetaMAVSState` definition + LangGraph graph construction/compilation
-- Dry-run logic for all 12 nodes + command generation
+- Dry-run logic for all 12 Phase-1 nodes + command generation
 - Intermediate artifacts persisted (CSV/JSON) + Markdown/HTML report
 - CLI: `metamavs run --dry-run`, `metamavs graph`, `validate`, `slurm`
 - 37 pytest tests, all green
@@ -102,7 +102,7 @@ and the human-review branch) is exercised end-to-end.
 
 **Definition of Done** — all satisfied:
 - `metamavs run --config configs/example_config.yaml --dry-run` runs successfully
-- The LangGraph graph compiles; 12 nodes execute in order; conditional review
+- The LangGraph graph compiles; nodes execute in order; conditional review
   routing works
 - Intermediate files are generated; the final Markdown report is generated
 - config/state/graph/routing/manifest tests pass; README is complete
@@ -201,9 +201,9 @@ not require rewriting the previous one.**
 │  Orchestration / Framework   LangGraph (StateGraph)     │  graph.py is the only contact
 │  nodes, conditional edges, checkpoint, HITL, error route │
 └────────────────────────────────────────────────────────┘
-        ▲ assembles and drives the 12 nodes
+        ▲ assembles and drives the 16 nodes
 ┌────────────────────────────────────────────────────────┐
-│  Node / Business   agents/*.py (12 agents)              │  pure functions (state)->dict
+│  Node / Business   agents/*.py (16 agents)              │  pure functions (state)->dict
 └────────────────────────────────────────────────────────┘
         ▲ calls
 ┌────────────────────────────────────────────────────────┐
@@ -245,27 +245,38 @@ Field groups: run metadata → input → per-node products
 
 ---
 
-## 6. Workflow Structure (12 Nodes)
+## 6. Workflow Structure (16 Nodes)
+
+The graph has **16 nodes**: the original 12 (Phase 1) + 3 remote HPC nodes
+(Phase 3) + 1 LLM interpretation node (Phase 4).
 
 ### 6.1 Main flow
 ```
 START
   → input_manager            (1) validate input, produce clean manifest
-  → qc_agent                 (2) QC commands + pass/fail decision
+  → qc_agent                 (2) QC commands/parse + pass/fail (LLM adequacy)
   → host_removal_agent       (3) host-removal commands + non-host reads
   → viral_detection_agent    (4) detection commands + hit tables
-  → taxonomy_agent           (5) taxonomy cleanup + false-positive/phage flags
-  → abundance_agent          (6) RPM normalization + trends
-  → novel_virus_agent        (7) assembly/screening commands + novel candidates
-  → risk_assessment_agent    (8) four-level risk grading + review decision
+  → [mode_router]
+        ├─ hpc:  remote_execution_agent   (5)  upload + sbatch DAG + monitor
+        │        result_sync_agent        (6)  download + integrity check
+        │        tool_output_parser_agent (7)  parse real outputs → tables
+        │          → taxonomy_agent
+        └─ local/dry-run:  → taxonomy_agent
+  → taxonomy_agent           (8) taxonomy cleanup + phage/FP (LLM + NCBI lineage)
+  → abundance_agent          (9) RPM normalization + trends (LLM interpretation)
+  → novel_virus_agent        (10) assembly/screening + novel candidates (LLM)
+  → risk_assessment_agent    (11) Low/Medium/High/Critical + reasons (LLM + NCBI)
   → [conditional_review_router]
-        ├─ human_review       (9) human-in-the-loop review (when needed)
-        └─────────────────────→ report_writer (straight through if not needed)
-  → report_writer_agent      (10) Markdown + HTML report
-  → final_summary            (11) final summary + state.json
+        ├─ human_review       (12) HITL: auto / interactive / pause-and-resume
+        │     └─ pause → END (resume later via `metamavs review`)
+        └──────────────────────────────────────────────→ llm_interpretation
+  → llm_interpretation       (13) public-health narrative (LLM)
+  → report_writer_agent      (14) Markdown + HTML report
+  → final_summary            (15) final summary + state.json
   → END
 
-Any node with a critical error → error_handler (12) → best-effort report if it can continue, else finalize
+Any node with a critical error → error_handler (16) → best-effort report if it can continue, else finalize
 ```
 
 ### 6.2 Node responsibility quick reference
@@ -363,7 +374,7 @@ MetaMAVS/
     state.py             # MetaMAVSState (TypedDict + reducers)
     routing.py           # Conditional routing functions
     graph.py             # ★Only contact with LangGraph: build+compile StateGraph
-    agents/              # 12 nodes, one file each
+    agents/              # 16 nodes (incl. remote HPC + LLM), one file each
     utils/               # logging / file / command_runner / taxonomy / report
     workflows/
       local_workflow.py  # Local execution backend (active)
