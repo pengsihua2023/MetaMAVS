@@ -222,9 +222,9 @@ START
 任何节点出致命错误 → error_handler (16) → 可继续则补报告,否则收尾
 ```
 
-### 6.2 节点职责速查
-`🧠` 标记**LLM agent**(启用时用 Claude,否则退回确定性)。Phase 3 远程节点
-(remote_execution/result_sync/tool_output_parser)从略。
+### 6.2 节点职责速查(全部 16 个)
+`🧠` 标记**LLM agent**(启用时用 Claude,否则退回确定性)。`(hpc)` 标记仅在
+`execution.mode: hpc` 时走的远程节点。
 
 | # | 节点 | LLM | 一句话职责 |
 |---|---|---|---|
@@ -232,15 +232,18 @@ START
 | 2 | qc_agent | 🧠 | QC 命令+通过/失败;LLM 评估数据是否足够检测 |
 | 3 | host_removal_agent | | 生成 Bowtie2/BWA/minimap2 去宿主命令 |
 | 4 | viral_detection_agent | | 生成 Kraken2/DIAMOND/GOTTCHA2 命令,产出原始命中+候选 taxon |
-| 5 | taxonomy_agent | 🧠 | 归一分类;LLM 判 噬菌体/病原/假阳性,**基于 NCBI 真实谱系 grounding** |
-| 6 | abundance_agent | 🧠 | RPM 归一化+趋势;LLM 做流行病学趋势解读 |
-| 7 | novel_virus_agent | 🧠 | 组装+筛查命令;LLM 评估新型/分歧候选 |
-| 8 | risk_assessment_agent | 🧠 | 逐 taxon 评 Low/Medium/High/Critical;LLM 推理+NCBI 谱系,在安全护栏内 |
-| 9 | human_review | | HITL 检查点(auto / interactive / **pause 暂停恢复**)|
-| (–) | llm_interpretation | 🧠 | 为报告生成公共卫生监测叙事 |
-| 10 | report_writer_agent | | 生成 Markdown + HTML 监测报告 |
-| 11 | final_summary | | 终末摘要、报告路径、落盘 `state.json` |
-| 12 | error_handler | | 错误分类、判定能否继续、防止静默失败 |
+| 5 | remote_execution_agent `(hpc)` | | 上传脚本/输入 → 提交 SLURM 依赖 DAG → 轮询 `sacct` 至作业终止 |
+| 6 | result_sync_agent `(hpc)` | | 从 HPC 下载结果文件 + 完整性校验,落到 `results/raw/` |
+| 7 | tool_output_parser_agent `(hpc)` | | 解析真实工具输出(GOTTCHA2/Kraken2 等)→ 标准化表 |
+| 8 | taxonomy_agent | 🧠 | 归一分类;LLM 判 噬菌体/病原/假阳性,**基于 NCBI 真实谱系 grounding** |
+| 9 | abundance_agent | 🧠 | RPM 归一化+趋势;LLM 做流行病学趋势解读 |
+| 10 | novel_virus_agent | 🧠 | 组装+筛查命令;LLM 评估新型/分歧候选 |
+| 11 | risk_assessment_agent | 🧠 | 逐 taxon 评 Low/Medium/High/Critical;LLM 推理+NCBI 谱系,在安全护栏内 |
+| 12 | human_review | | HITL 检查点(auto / interactive / **pause 暂停恢复**)|
+| 13 | llm_interpretation | 🧠 | 为报告生成公共卫生监测叙事 |
+| 14 | report_writer_agent | | 生成 Markdown + HTML 监测报告 |
+| 15 | final_summary | | 终末摘要、报告路径、落盘 `state.json` |
+| 16 | error_handler | | 错误分类、判定能否继续、防止静默失败 |
 
 ### 6.3 LLM agent("大脑")
 **6 个节点是真正的 LLM agent**(Anthropic Claude,`claude-opus-4-8`):qc、taxonomy、

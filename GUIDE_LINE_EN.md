@@ -280,9 +280,9 @@ Any node with a critical error → error_handler (16) → best-effort report if 
 ```
 
 ### 6.2 Node responsibility quick reference
-`🧠` marks nodes that are **LLM agents** (use Claude when enabled; deterministic
-fallback otherwise). The Phase 3 remote nodes (remote_execution, result_sync,
-tool_output_parser) and llm_interpretation are omitted here for brevity.
+All 16 nodes. `🧠` marks **LLM agents** (use Claude when enabled; deterministic
+fallback otherwise). `(hpc)` marks remote nodes traversed only when
+`execution.mode: hpc`.
 
 | # | Node | LLM | One-line responsibility |
 |---|---|---|---|
@@ -290,15 +290,18 @@ tool_output_parser) and llm_interpretation are omitted here for brevity.
 | 2 | qc_agent | 🧠 | QC commands + pass/fail; LLM data-adequacy assessment |
 | 3 | host_removal_agent | | Generate Bowtie2/BWA/minimap2 host-removal commands |
 | 4 | viral_detection_agent | | Generate Kraken2/DIAMOND/GOTTCHA2 commands, produce raw hits + candidate taxa |
-| 5 | taxonomy_agent | 🧠 | Normalize taxonomy; LLM classifies phage/pathogen/false-positive, **grounded in NCBI lineage** |
-| 6 | abundance_agent | 🧠 | RPM normalization + trends; LLM epidemiological trend interpretation |
-| 7 | novel_virus_agent | 🧠 | Assembly + screening commands; LLM assesses novel/divergent candidates |
-| 8 | risk_assessment_agent | 🧠 | Low/Medium/High/Critical per taxon; LLM reasoning + NCBI lineage, within safety rails |
-| 9 | human_review | | HITL checkpoint (auto / interactive / **pause-and-resume**) |
-| (–) | llm_interpretation | 🧠 | Public-health surveillance narrative for the report |
-| 10 | report_writer_agent | | Generate Markdown + HTML surveillance report |
-| 11 | final_summary | | Final summary, report paths, persist `state.json` |
-| 12 | error_handler | | Classify errors, decide whether to continue, prevent silent failures |
+| 5 | remote_execution_agent `(hpc)` | | Upload scripts/inputs → submit SLURM dependency DAG → poll `sacct` to terminal |
+| 6 | result_sync_agent `(hpc)` | | Download results from HPC + integrity check, into `results/raw/` |
+| 7 | tool_output_parser_agent `(hpc)` | | Parse real tool outputs (GOTTCHA2/Kraken2/…) → normalized tables |
+| 8 | taxonomy_agent | 🧠 | Normalize taxonomy; LLM classifies phage/pathogen/false-positive, **grounded in NCBI lineage** |
+| 9 | abundance_agent | 🧠 | RPM normalization + trends; LLM epidemiological trend interpretation |
+| 10 | novel_virus_agent | 🧠 | Assembly + screening commands; LLM assesses novel/divergent candidates |
+| 11 | risk_assessment_agent | 🧠 | Low/Medium/High/Critical per taxon; LLM reasoning + NCBI lineage, within safety rails |
+| 12 | human_review | | HITL checkpoint (auto / interactive / **pause-and-resume**) |
+| 13 | llm_interpretation | 🧠 | Public-health surveillance narrative for the report |
+| 14 | report_writer_agent | | Generate Markdown + HTML surveillance report |
+| 15 | final_summary | | Final summary, report paths, persist `state.json` |
+| 16 | error_handler | | Classify errors, decide whether to continue, prevent silent failures |
 
 ### 6.3 LLM agents (the "brains")
 Six nodes are **real LLM agents** (Anthropic Claude, `claude-opus-4-8`): qc,
