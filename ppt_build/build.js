@@ -115,9 +115,10 @@ async function build() {
     s.addText("Metagenomic Multi-Agent Virus Surveillance System", { x: M, y: 3.5, w: 7.7, h: 0.7, fontFace: H, fontSize: 21, color: "BFE9E6", margin: 0 });
     s.addText([
       { text: "A LangGraph-based, stateful multi-agent workflow for viral surveillance", options: { breakLine: true } },
-      { text: "from wastewater, environmental & clinical metagenomic data.", options: {} },
-    ], { x: M, y: 4.45, w: 7.6, h: 0.8, fontFace: B, fontSize: 14, color: "9FB3C0", lineSpacingMultiple: 1.15, margin: 0 });
-    s.addText("Team Introduction  ·  Sihua Peng", { x: M, y: 5.9, w: 7, h: 0.4, fontFace: H, fontSize: 14, bold: true, color: WHITE, margin: 0 });
+      { text: "from wastewater, environmental & clinical metagenomic data — all four", options: { breakLine: true } },
+      { text: "phases complete: deterministic core, real HPC execution & optional LLM agents.", options: {} },
+    ], { x: M, y: 4.4, w: 7.6, h: 1.0, fontFace: B, fontSize: 14, color: "9FB3C0", lineSpacingMultiple: 1.15, margin: 0 });
+    s.addText("Team Introduction  ·  Sihua Peng", { x: M, y: 5.95, w: 7, h: 0.4, fontFace: H, fontSize: 14, bold: true, color: WHITE, margin: 0 });
   }
 
   // ---------- 2. THE CHALLENGE ----------
@@ -150,8 +151,8 @@ async function build() {
       { x: M, y: 1.9, w: W - 2 * M, h: 0.9, fontFace: B, fontSize: 15, color: DARK, lineSpacingMultiple: 1.15, margin: 0 });
     const cards = [
       ["flask", "Research-grade", "Scientifically cautious — \"detected signal\", not \"confirmed infection\". Never overstates weak evidence.", TEAL],
-      ["robot", "Multi-agent", "Not a sequential script — a LangGraph StateGraph with 12 agent nodes & conditional routing.", AMBER],
-      ["seed", "Evolvable", "Phase 1 is fully deterministic; clean seams let LLM reasoning slot into nodes later.", MINT],
+      ["robot", "Multi-agent", "Not a sequential script — a LangGraph StateGraph with 16 nodes & conditional routing.", AMBER],
+      ["brain", "AI-augmented", "Deterministic & key-free by default; 6 nodes become NCBI-grounded Claude agents when enabled.", MINT],
     ];
     const cw = (W - 2 * M - 2 * 0.5) / 3, ch = 3.0, y = 3.05;
     cards.forEach((c, i) => {
@@ -170,9 +171,9 @@ async function build() {
     const rows = [
       ["diagram", "State machine, not a script", "Conditional routing, error diversion, human-in-the-loop, checkpointing — impossible in a flat script."],
       ["cubes", "One shared state flows through", "Every node returns a partial update; warnings/errors/log use add-reducers to append, never overwrite."],
-      ["layer", "Framework dependency centralized", "Only graph.py imports LangGraph; the 12 agents stay pure, testable functions."],
+      ["layer", "Framework dependency centralized", "Only graph.py imports LangGraph; the 16 nodes stay pure, testable functions."],
       ["branch", "Separation of concerns by layer", "Orchestration (LangGraph) · nodes (agents) · utilities · data validation (pydantic) — clearly split."],
-      ["shield", "Scientific caution is enforced", "Phages flagged separately, low-confidence marked, confirmatory testing recommended for high risk."],
+      ["shield", "Scientific caution is enforced", "Deterministic safety rails: LLM agents may only add caution; phages & low-confidence flagged, confirmatory testing advised."],
     ];
     let y = 1.95; const rh = 0.94, rg = 0.12;
     rows.forEach((r) => {
@@ -187,63 +188,80 @@ async function build() {
   // ---------- 5. WORKFLOW AT A GLANCE ----------
   {
     const s = pres.addSlide();
-    lightHeader(s, "Architecture", "The workflow at a glance — 12 nodes", 5);
+    lightHeader(s, "Architecture", "The workflow at a glance — 16 nodes", 5);
+    const HPC = "3E6E8E", LLMP = "5B5A8E";
+    // [num, label, color, isLLM]
     const nodes = [
-      ["1", "input_manager", TEAL], ["2", "qc_agent", TEAL], ["3", "host_removal", TEAL], ["4", "viral_detection", TEAL],
-      ["5", "taxonomy", TEAL], ["6", "abundance", TEAL], ["7", "novel_virus", TEAL], ["8", "risk_assessment", AMBER],
-      ["9", "human_review", MINT], ["10", "report_writer", INK2], ["11", "final_summary", INK2], ["12", "error_handler", CORAL],
+      ["1", "input_manager", TEAL, 0], ["2", "qc_agent", TEAL, 1], ["3", "host_removal", TEAL, 0], ["4", "viral_detect", TEAL, 0],
+      ["5", "remote_exec", HPC, 0], ["6", "result_sync", HPC, 0], ["7", "output_parser", HPC, 0], ["8", "taxonomy", TEAL, 1],
+      ["9", "abundance", TEAL, 1], ["10", "novel_virus", TEAL, 1], ["11", "risk_assess", AMBER, 1], ["12", "human_review", MINT, 0],
+      ["13", "llm_interpret", LLMP, 1], ["14", "report_writer", INK2, 0], ["15", "final_summary", INK2, 0], ["16", "error_handler", CORAL, 0],
     ];
-    const cols = 4, cw = 2.78, ch = 0.92, gx = 0.24, gy = 0.34;
-    const x0 = M, y0 = 2.05;
+    const cols = 4, cw = 2.78, ch = 0.74, gx = 0.24, gy = 0.2;
+    const x0 = M, y0 = 1.9;
     nodes.forEach((n, i) => {
       const col = i % cols, row = Math.floor(i / cols);
       const x = x0 + col * (cw + gx), y = y0 + row * (ch + gy);
       s.addShape("roundRect", { x, y, w: cw, h: ch, rectRadius: 0.08, fill: { color: WHITE }, line: { color: n[2], width: 1.5 }, shadow: shadow() });
-      s.addShape("oval", { x: x + 0.16, y: y + 0.21, w: 0.5, h: 0.5, fill: { color: n[2] } });
-      s.addText(n[0], { x: x + 0.16, y: y + 0.21, w: 0.5, h: 0.5, fontFace: H, fontSize: 15, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
-      s.addText(n[1], { x: x + 0.78, y: y, w: cw - 0.9, h: ch, fontFace: H, fontSize: 13.5, bold: true, color: INK, valign: "middle", margin: 0 });
+      s.addShape("oval", { x: x + 0.13, y: y + 0.14, w: 0.46, h: 0.46, fill: { color: n[2] } });
+      s.addText(n[0], { x: x + 0.13, y: y + 0.14, w: 0.46, h: 0.46, fontFace: H, fontSize: 12.5, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
+      s.addText(n[1], { x: x + 0.66, y: y, w: cw - 1.1, h: ch, fontFace: H, fontSize: 11.5, bold: true, color: INK, valign: "middle", margin: 0 });
+      if (n[3]) {
+        s.addShape("roundRect", { x: x + cw - 0.52, y: y + 0.1, w: 0.42, h: 0.24, rectRadius: 0.12, fill: { color: LLMP } });
+        s.addText("AI", { x: x + cw - 0.52, y: y + 0.1, w: 0.42, h: 0.24, fontFace: H, fontSize: 8.5, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
+      }
     });
-    // arrows between rows (down-right snake hint) — simple chevrons at row ends
-    const legendY = 5.95;
-    const leg = [["Backbone analysis", TEAL], ["Decision point", AMBER], ["Human-in-the-loop", MINT], ["Report & summary", INK2], ["Error guard", CORAL]];
-    let lx = M;
+    const legendY = 5.74;
+    const leg = [["Backbone", TEAL], ["HPC remote", HPC], ["Decision", AMBER], ["Review", MINT], ["LLM agent", LLMP], ["Report", INK2], ["Error", CORAL]];
+    let lx = M; const lstep = (W - 2 * M) / 7;
     leg.forEach((l) => {
-      s.addShape("oval", { x: lx, y: legendY + 0.03, w: 0.2, h: 0.2, fill: { color: l[1] } });
-      s.addText(l[0], { x: lx + 0.28, y: legendY - 0.04, w: 2.05, h: 0.3, fontFace: B, fontSize: 11, color: DARK, margin: 0 });
-      lx += 2.35;
+      s.addShape("oval", { x: lx, y: legendY + 0.03, w: 0.18, h: 0.18, fill: { color: l[1] } });
+      s.addText(l[0], { x: lx + 0.24, y: legendY - 0.04, w: lstep - 0.26, h: 0.3, fontFace: B, fontSize: 9.5, color: DARK, margin: 0 });
+      lx += lstep;
     });
-    s.addText("START → input_manager → … → risk_assessment → (review?) → report_writer → final_summary → END.  Any node can divert to error_handler.",
-      { x: M, y: 6.45, w: W - 2 * M, h: 0.5, fontFace: B, fontSize: 12, italic: true, color: SLATE, margin: 0 });
+    s.addText([
+      { text: "START → input → qc → host → viral_detection → [mode_router] → (HPC: remote_exec → result_sync → output_parser) → taxonomy →", options: { breakLine: true } },
+      { text: "abundance → novel_virus → risk → (review?) → human_review → llm_interpret → report_writer → final_summary → END.   ", options: {} },
+      { text: "Any node can divert to error_handler.", options: { italic: true } },
+    ], { x: M, y: 6.25, w: W - 2 * M, h: 0.9, fontFace: B, fontSize: 10.5, color: SLATE, lineSpacingMultiple: 1.12, margin: 0 });
   }
 
-  // ---------- 6. THE 12 AGENTS ----------
+  // ---------- 6. THE 16 NODES ----------
   {
     const s = pres.addSlide();
-    lightHeader(s, "Agents", "What each node does", 6);
+    lightHeader(s, "Nodes", "What each of the 16 nodes does", 6);
+    const HPC = "3E6E8E", LLMP = "5B5A8E";
+    // [icon, name, desc, accent, isLLM]
     const data = [
-      ["glass", "viral_detection", "Generate Kraken2/DIAMOND etc. commands; produce raw hits + candidate taxa."],
-      ["clip", "input_manager", "Validate manifest & metadata; emit a clean validated_manifest.csv."],
-      ["check", "qc_agent", "FastQC/fastp/MultiQC commands; per-sample pass/fail."],
-      ["filter", "host_removal", "Bowtie2/BWA/minimap2 commands; track non-host reads."],
-      ["dna", "taxonomy", "Normalize taxa; flag phage / false-positive / low-complexity."],
-      ["chart", "abundance", "RPM & genome-length normalization; cross-sample time trends."],
-      ["virus", "novel_virus", "Assembly + VirSorter2/CheckV; surface novel/divergent candidates."],
-      ["shield", "risk_assessment", "Fuse evidence → Low/Medium/High/Critical; set review flag."],
-      ["user", "human_review", "HITL checkpoint on high risk (auto-approve in dry-run)."],
-      ["file", "report_writer", "Assemble Markdown + HTML surveillance report."],
-      ["list", "final_summary", "Final summary, report paths, persist state.json."],
-      ["warn", "error_handler", "Classify errors, decide continue/stop, prevent silent failure."],
+      ["clip", "input_manager", "Validate manifest & metadata → clean validated_manifest.csv.", TEAL, 0],
+      ["check", "qc_agent", "FastQC/fastp commands + pass/fail; LLM data-adequacy check.", TEAL, 1],
+      ["filter", "host_removal", "Bowtie2/BWA/minimap2 commands; track non-host reads.", TEAL, 0],
+      ["glass", "viral_detection", "Kraken2/DIAMOND/GOTTCHA2 commands; raw hits + candidates.", TEAL, 0],
+      ["server", "remote_execution", "Upload + submit SLURM DAG; poll sacct to completion. (hpc)", HPC, 0],
+      ["server", "result_sync", "Download HPC outputs + integrity check → results/raw. (hpc)", HPC, 0],
+      ["gears", "tool_output_parser", "Parse real tool outputs → normalized tables. (hpc)", HPC, 0],
+      ["dna", "taxonomy", "Normalize taxa; classify phage/pathogen/FP — NCBI-grounded.", TEAL, 1],
+      ["chart", "abundance", "RPM normalization + trends; LLM trend interpretation.", TEAL, 1],
+      ["virus", "novel_virus", "Assembly + screening; LLM novel/divergent assessment.", TEAL, 1],
+      ["shield", "risk_assessment", "Fuse evidence → Low/Med/High/Critical within safety rails.", AMBER, 1],
+      ["user", "human_review", "HITL: auto / interactive / pause-and-resume checkpoint.", MINT, 0],
+      ["brain", "llm_interpretation", "Public-health surveillance narrative for the report.", LLMP, 1],
+      ["file", "report_writer", "Assemble Markdown + HTML surveillance report.", INK2, 0],
+      ["list", "final_summary", "Final summary, report paths, persist state.json.", INK2, 0],
+      ["warn", "error_handler", "Classify errors, continue/stop, prevent silent failure.", CORAL, 0],
     ];
-    // order to present in reading order matching node order
-    const order = [1,2,3,0,4,5,6,7,8,9,10,11].map(i => data[i]);
-    const cols = 3, cw = (W - 2 * M - 2 * 0.3) / 3, ch = 1.12, gx = 0.3, gy = 0.12, y0 = 1.85;
-    order.forEach((d, i) => {
+    const cols = 4, gx = 0.24, cw = (W - 2 * M - (cols - 1) * gx) / cols, ch = 1.05, gy = 0.12, y0 = 1.8;
+    data.forEach((d, i) => {
       const col = i % cols, row = Math.floor(i / cols);
       const x = M + col * (cw + gx), y = y0 + row * (ch + gy);
-      card(s, x, y, cw, ch, TEAL);
-      iconCircle(s, x + 0.22, y + 0.2, 0.54, TEAL, I[d[0]], 0.5);
-      s.addText(d[1], { x: x + 0.9, y: y + 0.14, w: cw - 1.05, h: 0.4, fontFace: H, fontSize: 13, bold: true, color: INK, margin: 0 });
-      s.addText(d[2], { x: x + 0.24, y: y + 0.58, w: cw - 0.45, h: 0.46, fontFace: B, fontSize: 10.5, color: SLATE, lineSpacingMultiple: 1.0, margin: 0 });
+      card(s, x, y, cw, ch, d[3]);
+      iconCircle(s, x + 0.18, y + 0.16, 0.46, d[3], I[d[0]], 0.52);
+      s.addText(d[1], { x: x + 0.72, y: y + 0.12, w: cw - 0.85, h: 0.36, fontFace: H, fontSize: 10.5, bold: true, color: INK, margin: 0 });
+      if (d[4]) {
+        s.addShape("roundRect", { x: x + cw - 0.5, y: y + 0.14, w: 0.4, h: 0.22, rectRadius: 0.11, fill: { color: LLMP } });
+        s.addText("AI", { x: x + cw - 0.5, y: y + 0.14, w: 0.4, h: 0.22, fontFace: H, fontSize: 8, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
+      }
+      s.addText(d[2], { x: x + 0.2, y: y + 0.52, w: cw - 0.36, h: 0.48, fontFace: B, fontSize: 8.8, color: SLATE, lineSpacingMultiple: 1.0, margin: 0 });
     });
   }
 
@@ -263,7 +281,10 @@ async function build() {
     s.addShape("rightArrow", { x: 6.6, y: 2.32, w: 0.85, h: 0.26, fill: { color: MINT } });
     s.addText("YES", { x: 6.55, y: 2.0, w: 0.9, h: 0.3, fontFace: H, fontSize: 10, bold: true, color: TEALD, align: "center", margin: 0 });
     s.addShape("roundRect", { x: 7.55, y: 1.95, w: 2.5, h: 0.95, rectRadius: 0.08, fill: { color: MINT }, shadow: shadow() });
-    s.addText("human_review", { x: 7.55, y: 1.95, w: 2.5, h: 0.95, fontFace: H, fontSize: 13.5, bold: true, color: INK, align: "center", valign: "middle", margin: 0 });
+    s.addText([
+      { text: "human_review", options: { fontSize: 13.5, breakLine: true } },
+      { text: "auto · interactive · pause/resume", options: { fontSize: 8.5 } },
+    ], { x: 7.55, y: 1.95, w: 2.5, h: 0.95, fontFace: H, bold: true, color: INK, align: "center", valign: "middle", margin: 0 });
     // NO -> report (lower right)
     s.addShape("rightArrow", { x: 6.6, y: 3.55, w: 0.85, h: 0.26, fill: { color: TEAL } });
     s.addText("NO", { x: 6.55, y: 3.78, w: 0.9, h: 0.3, fontFace: H, fontSize: 10, bold: true, color: TEAL, align: "center", margin: 0 });
@@ -283,8 +304,9 @@ async function build() {
     s.addText([
       { text: "Overall risk is High or Critical", options: { bullet: true, breakLine: true } },
       { text: "Novel / divergent virus candidates exist", options: { bullet: true, breakLine: true } },
-      { text: "A sample fails QC", options: { bullet: true } },
-    ], { x: M + 0.95, y: 5.42, w: 4.4, h: 1.2, fontFace: B, fontSize: 12, color: SLATE, paraSpaceAfter: 4, margin: 0 });
+      { text: "A sample fails QC", options: { bullet: true, breakLine: true } },
+      { text: "pause mode → run halts, resumes via metamavs review", options: { bullet: true } },
+    ], { x: M + 0.95, y: 5.4, w: 4.4, h: 1.25, fontFace: B, fontSize: 11, color: SLATE, paraSpaceAfter: 3, margin: 0 });
 
     // error guard card
     card(s, 6.4, 4.75, W - M - 6.4, 1.95, CORAL);
@@ -297,10 +319,103 @@ async function build() {
     ], { x: 7.35, y: 5.42, w: 5.4, h: 1.2, fontFace: B, fontSize: 12, color: SLATE, paraSpaceAfter: 4, margin: 0 });
   }
 
-  // ---------- 8. SHARED STATE ----------
+  // ---------- 8. LLM AGENTS & GROUNDING (Phase 4) ----------
   {
     const s = pres.addSlide();
-    lightHeader(s, "Data model", "Shared state: one structure flows through all nodes", 8);
+    const LLMP = "5B5A8E";
+    lightHeader(s, "AI · Phase 4", "LLM agents — grounded reasoning within safety rails", 8);
+    // left: the 6 LLM agents
+    s.addShape("rect", { x: M, y: 1.95, w: 5.7, h: 4.7, fill: { color: WHITE }, line: { color: LINE, width: 1 }, shadow: shadow() });
+    s.addShape("rect", { x: M, y: 1.95, w: 0.09, h: 4.7, fill: { color: LLMP } });
+    s.addText("6 nodes become Claude agents", { x: M + 0.35, y: 2.18, w: 5.2, h: 0.4, fontFace: H, fontSize: 16, bold: true, color: INK, margin: 0 });
+    s.addText("On by config; deterministic & key-free when off.", { x: M + 0.35, y: 2.6, w: 5.2, h: 0.35, fontFace: B, fontSize: 11.5, italic: true, color: SLATE, margin: 0 });
+    const ag = [
+      ["qc_agent", "data-adequacy assessment"],
+      ["taxonomy", "phage / pathogen / FP — NCBI-grounded"],
+      ["abundance", "epidemiological trend interpretation"],
+      ["novel_virus", "novel / divergent candidate assessment"],
+      ["risk_assessment", "per-taxon risk + reasoning — NCBI-grounded"],
+      ["llm_interpretation", "public-health surveillance narrative"],
+    ];
+    let ay = 3.12;
+    ag.forEach((a) => {
+      s.addShape("roundRect", { x: M + 0.35, y: ay, w: 0.46, h: 0.26, rectRadius: 0.12, fill: { color: LLMP } });
+      s.addText("AI", { x: M + 0.35, y: ay, w: 0.46, h: 0.26, fontFace: H, fontSize: 8.5, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
+      s.addText([
+        { text: a[0] + "  ", options: { bold: true, color: INK } },
+        { text: "— " + a[1], options: { color: SLATE } },
+      ], { x: M + 0.95, y: ay - 0.04, w: 4.6, h: 0.35, fontFace: B, fontSize: 11.5, valign: "middle", margin: 0 });
+      ay += 0.56;
+    });
+    // right: grounding + safety rails
+    const rx = 6.55, rw = W - M - 6.55;
+    card(s, rx, 1.95, rw, 2.2, TEAL);
+    iconCircle(s, rx + 0.26, 2.18, 0.56, TEAL, I.dna, 0.5);
+    s.addText("Grounded — not memory-only", { x: rx + 0.95, y: 2.18, w: rw - 1.1, h: 0.4, fontFace: H, fontSize: 14, bold: true, color: INK, margin: 0 });
+    s.addText([
+      { text: "NCBI Taxonomy lineage by taxid — \"Division: Phages\" is authoritative", options: { bullet: true, breakLine: true } },
+      { text: "Curated literature reference + per-pathogen snippets", options: { bullet: true, breakLine: true } },
+      { text: "Shared reference is the cached prompt prefix (cross-agent cache hits)", options: { bullet: true } },
+    ], { x: rx + 0.3, y: 2.7, w: rw - 0.55, h: 1.4, fontFace: B, fontSize: 11, color: SLATE, paraSpaceAfter: 4, margin: 0 });
+    card(s, rx, 4.4, rw, 2.25, CORAL);
+    iconCircle(s, rx + 0.26, 4.63, 0.56, CORAL, I.shield, 0.5);
+    s.addText("Deterministic safety rails", { x: rx + 0.95, y: 4.63, w: rw - 1.1, h: 0.4, fontFace: H, fontSize: 14, bold: true, color: INK, margin: 0 });
+    s.addText([
+      { text: "The LLM may only ADD caution, never escalate beyond evidence", options: { bullet: true, breakLine: true } },
+      { text: "Phages & false positives pinned Low; configured pathogens floored High", options: { bullet: true, breakLine: true } },
+      { text: "PMMoV / crAssphage treated as controls, not threats", options: { bullet: true, breakLine: true } },
+      { text: "Missing key / SDK / API error → deterministic fallback", options: { bullet: true } },
+    ], { x: rx + 0.3, y: 5.15, w: rw - 0.55, h: 1.5, fontFace: B, fontSize: 11, color: SLATE, paraSpaceAfter: 4, margin: 0 });
+  }
+
+  // ---------- 9. HPC DEPLOYMENT & REAL REVIEW (Phase 3) ----------
+  {
+    const s = pres.addSlide();
+    darkBase(s);
+    const HPC = "3E6E8E";
+    s.addText("PHASE 3 · VERIFIED ON UGA GACRC SAPELO2", { x: M, y: 0.6, w: 11, h: 0.3, fontFace: H, fontSize: 12, bold: true, color: MINT, charSpacing: 2, margin: 0 });
+    s.addText("Local control · HPC execution · human sign-off", { x: M, y: 0.88, w: W - 2 * M, h: 0.6, fontFace: H, fontSize: 28, bold: true, color: WHITE, margin: 0 });
+    // three architecture panels
+    const panels = [
+      ["robot", "Local controller", TEAL, ["Orchestration (LangGraph)", "Parsing → tables", "NCBI + LLM + report"]],
+      ["shield", "Secure bridge", MINT, ["SSH ControlMaster", "ONE Duo auth / run", "rsync · sbatch · sacct"]],
+      ["server", "HPC execution", HPC, ["Sapelo2 SLURM job DAG", "GOTTCHA2 (conda env)", "self-contained scripts"]],
+    ];
+    const pw = (W - 2 * M - 2 * 0.9) / 3, py = 1.95, ph = 2.55;
+    panels.forEach((p, i) => {
+      const x = M + i * (pw + 0.9);
+      s.addShape("rect", { x, y: py, w: pw, h: ph, fill: { color: INK2 }, shadow: shadow() });
+      s.addShape("rect", { x, y: py, w: pw, h: 0.12, fill: { color: p[2] } });
+      iconCircle(s, x + pw / 2 - 0.45, py + 0.32, 0.9, p[2], I[p[0]], 0.5);
+      s.addText(p[1], { x, y: py + 1.3, w: pw, h: 0.4, fontFace: H, fontSize: 16, bold: true, color: WHITE, align: "center", margin: 0 });
+      s.addText(p[3].map((t, k) => ({ text: t, options: { breakLine: k < p[3].length - 1 } })),
+        { x: x + 0.2, y: py + 1.78, w: pw - 0.4, h: 0.7, fontFace: B, fontSize: 10.5, color: "9FB3C0", align: "center", lineSpacingMultiple: 1.1, margin: 0 });
+      if (i < 2) s.addShape("rightArrow", { x: x + pw + 0.18, y: py + ph / 2 - 0.18, w: 0.54, h: 0.36, fill: { color: MINT } });
+    });
+    // results strip
+    s.addText("VERIFIED LIVE — sample Genome_72", { x: M, y: 4.78, w: 11, h: 0.3, fontFace: H, fontSize: 12, bold: true, color: MINT, charSpacing: 1, margin: 0 });
+    const dets = [
+      ["SARS-related coronavirus", "High", CORAL],
+      ["Norwalk / Norovirus", "High", CORAL],
+      ["PMMoV", "Control", TEAL],
+    ];
+    const dw = (W - 2 * M - 2 * 0.4) / 3, dy = 5.12, dh = 0.78;
+    dets.forEach((d, i) => {
+      const x = M + i * (dw + 0.4);
+      s.addShape("rect", { x, y: dy, w: dw, h: dh, fill: { color: INK2 } });
+      s.addShape("rect", { x, y: dy, w: 0.08, h: dh, fill: { color: d[2] } });
+      s.addText(d[0], { x: x + 0.25, y: dy, w: dw - 1.7, h: dh, fontFace: B, fontSize: 12, color: "D7E3EA", valign: "middle", margin: 0 });
+      s.addShape("roundRect", { x: x + dw - 1.45, y: dy + 0.21, w: 1.3, h: 0.36, rectRadius: 0.18, fill: { color: d[2] } });
+      s.addText(d[1], { x: x + dw - 1.45, y: dy + 0.21, w: 1.3, h: 0.36, fontFace: H, fontSize: 10.5, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
+    });
+    s.addText("GOTTCHA2 ran on the cluster in minutes; results were downloaded, parsed locally, then PAUSED for a human reviewer who approved before the report was written.",
+      { x: M, y: 6.2, w: W - 2 * M, h: 0.6, fontFace: B, fontSize: 12, italic: true, color: "BFE9E6", align: "center", lineSpacingMultiple: 1.1, margin: 0 });
+  }
+
+  // ---------- 10. SHARED STATE ----------
+  {
+    const s = pres.addSlide();
+    lightHeader(s, "Data model", "Shared state: one structure flows through all nodes", 10);
     // left: concept
     card(s, M, 1.95, 6.1, 4.7, TEAL);
     iconCircle(s, M + 0.34, 2.25, 0.8, TEAL, I.cubes, 0.5);
@@ -325,6 +440,7 @@ async function build() {
       { text: "    qc_pass_fail: dict", options: { color: "D7E3EA", breakLine: true } },
       { text: "    risk_summary: dict", options: { color: "D7E3EA", breakLine: true } },
       { text: "    review_required: bool", options: { color: "D7E3EA", breakLine: true } },
+      { text: "    awaiting_review: bool", options: { color: "D7E3EA", breakLine: true } },
       { text: "    markdown_report_path: str | None", options: { color: "D7E3EA", breakLine: true } },
       { text: "    warnings:  Annotated[list, add]", options: { color: "F4C77B", breakLine: true } },
       { text: "    errors:    Annotated[list, add]", options: { color: "F4C77B", breakLine: true } },
@@ -333,15 +449,15 @@ async function build() {
     ], { x: 7.25, y: 2.6, w: W - M - 7.3, h: 3.9, fontFace: "Consolas", fontSize: 12.5, color: "D7E3EA", lineSpacingMultiple: 1.12, margin: 0 });
   }
 
-  // ---------- 9. TECH FRAMEWORK & LAYERING ----------
+  // ---------- 11. TECH FRAMEWORK & LAYERING ----------
   {
     const s = pres.addSlide();
-    lightHeader(s, "Stack", "Framework & layering — LangGraph is the only framework", 9);
+    lightHeader(s, "Stack", "Framework & layering — LangGraph is the only framework", 11);
     const layers = [
       ["Orchestration / Framework", "LangGraph StateGraph — nodes, conditional edges, checkpoint, HITL, error routing", TEAL, "diagram"],
-      ["Node / Business", "agents/*.py — 12 agents, pure functions (state) → partial dict", AMBER, "robot"],
-      ["Utility / Infrastructure", "logging · files · command_runner · taxonomy · report rendering", INK2, "gears"],
-      ["Data validation", "config.py + schemas.py (pydantic) — validates config & manifest only", MINT, "clip"],
+      ["Node / Business", "agents/*.py — 16 nodes, pure functions (state) → partial dict", AMBER, "robot"],
+      ["Remote · LLM · grounding", "remote/ (SSH·SLURM) · llm/ (Claude) · taxonomy_db.py (NCBI) — all optional", "5B5A8E", "server"],
+      ["Utility · validation", "logging · files · parsers · report · config+schemas (pydantic)", INK2, "clip"],
     ];
     let y = 1.95; const h = 0.92, g = 0.14;
     layers.forEach((l) => {
@@ -360,10 +476,10 @@ async function build() {
       ["LangGraph", "the framework ✔"],
       ["pydantic", "data validation"],
       ["pandas", "tables / CSV"],
-      ["PyYAML", "config parsing"],
       ["typer", "CLI"],
-      ["pytest", "tests"],
-      ["LangChain", "Phase 4 only — unused"],
+      ["anthropic", "LLM agents (opt)"],
+      ["pytest", "119 tests"],
+      ["LangChain", "not used — Anthropic SDK direct"],
     ];
     let ly = 2.62;
     libs.forEach((lb, i) => {
@@ -384,10 +500,10 @@ async function build() {
     s.addText("ROADMAP", { x: M, y: 0.6, w: 8, h: 0.3, fontFace: H, fontSize: 12, bold: true, color: MINT, charSpacing: 3, margin: 0 });
     s.addText("Four phases — incremental delivery", { x: M, y: 0.88, w: W - 2 * M, h: 0.6, fontFace: H, fontSize: 28, bold: true, color: WHITE, margin: 0 });
     const phases = [
-      ["Phase 1", "Minimal Prototype", "Deterministic dry-run of the full LangGraph flow + reports + tests.", MINT, "DONE"],
-      ["Phase 2", "Real Execution", "Run generated commands; tool checks, exit codes, recovery, SLURM.", TEAL, "NEXT"],
-      ["Phase 3", "Bioinformatics", "Integrate real tools (Kraken2, DIAMOND, MEGAHIT, VirSorter2…).", "3E6E8E", "PLANNED"],
-      ["Phase 4", "LLM Interpretation", "Optional LLM reasoning in nodes — interpretation, narrative, prose.", "5B5A8E", "PLANNED"],
+      ["Phase 1", "Deterministic Core", "Full LangGraph dry-run flow + reports + tests — key-free.", MINT, "DONE"],
+      ["Phase 2", "Real Execution", "Run commands; tool checks, exit codes, recovery, SLURM gen.", TEAL, "DONE"],
+      ["Phase 3", "Hybrid HPC", "Local control + HPC execution — verified on UGA Sapelo2 (GOTTCHA2).", "3E6E8E", "DONE"],
+      ["Phase 4", "LLM Agents", "6 NCBI-grounded Claude agents + pause/resume human review.", "5B5A8E", "DONE"],
     ];
     const cw = (W - 2 * M - 3 * 0.4) / 4, y = 2.0, ch = 3.9;
     phases.forEach((p, i) => {
@@ -406,12 +522,12 @@ async function build() {
       { x: M, y: 6.3, w: W - 2 * M, h: 0.5, fontFace: B, fontSize: 13, italic: true, color: "BFE9E6", align: "center", margin: 0 });
   }
 
-  // ---------- 11. PHASE 1 DELIVERED ----------
+  // ---------- 13. ALL PHASES DELIVERED ----------
   {
     const s = pres.addSlide();
-    lightHeader(s, "Status", "Phase 1 — delivered & verified", 11);
+    lightHeader(s, "Status", "All four phases — delivered & verified", 13);
     // stat callouts
-    const stats = [["37", "tests passing"], ["12", "agent nodes"], ["4", "CLI commands"], ["0", "API keys needed"]];
+    const stats = [["119", "tests passing"], ["16", "graph nodes"], ["6", "LLM agents"], ["7", "CLI commands"]];
     const sw = (W - 2 * M - 3 * 0.4) / 4, sy = 1.9, sh = 1.5;
     stats.forEach((st, i) => {
       const x = M + i * (sw + 0.4);
@@ -422,12 +538,12 @@ async function build() {
     });
     // checklist
     const items = [
-      "Full project skeleton + pydantic config + manifest validation",
-      "LangGraph StateGraph builds, compiles & runs end-to-end",
-      "All 12 nodes execute; conditional review routing works",
-      "Dry-run command generation for every bioinformatics step",
-      "Intermediate CSV/JSON + Markdown & HTML reports generated",
-      "MemorySaver checkpointing; human-in-the-loop checkpoint",
+      "LangGraph StateGraph: 16 nodes build, compile & run end-to-end",
+      "Real command execution + SLURM generation (Phase 2)",
+      "Hybrid HPC: verified live on UGA Sapelo2 with real GOTTCHA2",
+      "6 LLM agents grounded in NCBI Taxonomy + literature",
+      "Deterministic safety rails; pause/resume human review",
+      "Markdown + HTML reports; key-free fallback throughout",
     ];
     const cw = (W - 2 * M - 0.5) / 2, ch = 0.62, y0 = 3.7;
     items.forEach((it, i) => {
@@ -436,14 +552,14 @@ async function build() {
       s.addImage({ data: I.checkTeal, x: x, y: y + 0.06, w: 0.34, h: 0.34 });
       s.addText(it, { x: x + 0.5, y: y, w: cw - 0.5, h: ch, fontFace: B, fontSize: 12.5, color: DARK, valign: "middle", lineSpacingMultiple: 1.0, margin: 0 });
     });
-    s.addText("metamavs run --config configs/example_config.yaml --dry-run   →   completed_with_warnings",
-      { x: M, y: 6.55, w: W - 2 * M, h: 0.4, fontFace: "Consolas", fontSize: 11.5, color: TEALD, align: "center", margin: 0 });
+    s.addText("metamavs run --config configs/sapelo2_config.yaml --execute   →   real GOTTCHA2 on Sapelo2 → human review → report",
+      { x: M, y: 6.55, w: W - 2 * M, h: 0.4, fontFace: "Consolas", fontSize: 10.5, color: TEALD, align: "center", margin: 0 });
   }
 
-  // ---------- 12. WHAT A RUN PRODUCES ----------
+  // ---------- 14. WHAT A RUN PRODUCES ----------
   {
     const s = pres.addSlide();
-    lightHeader(s, "Output", "What a run produces", 12);
+    lightHeader(s, "Output", "What a run produces", 14);
     // left: run directory tree
     s.addShape("rect", { x: M, y: 1.95, w: 6.0, h: 4.7, fill: { color: INK }, shadow: shadow() });
     s.addShape("rect", { x: M, y: 1.95, w: 6.0, h: 0.45, fill: { color: INK2 } });
@@ -454,19 +570,21 @@ async function build() {
       { text: "commands/      generated *.sh scripts", options: { breakLine: true } },
       { text: "tables/        hits, taxonomy, abundance,", options: { breakLine: true } },
       { text: "               trends, risk, novel (CSV)", options: { breakLine: true } },
+      { text: "remote/        job ledger + SLURM scripts", options: { breakLine: true, color: "F4C77B" } },
+      { text: "results/raw/   downloaded HPC outputs", options: { breakLine: true, color: "F4C77B" } },
       { text: "report.md      Markdown report", options: { breakLine: true, color: "8AD9D2" } },
       { text: "report.html    HTML report", options: { breakLine: true, color: "8AD9D2" } },
       { text: "state.json     complete final state", options: {} },
-    ], { x: M + 0.25, y: 2.6, w: 5.6, h: 3.9, fontFace: "Consolas", fontSize: 12.5, color: "D7E3EA", lineSpacingMultiple: 1.18, margin: 0 });
+    ], { x: M + 0.25, y: 2.55, w: 5.6, h: 4.0, fontFace: "Consolas", fontSize: 11.5, color: "D7E3EA", lineSpacingMultiple: 1.16, margin: 0 });
 
-    // right: example detections (the dry-run demo)
-    s.addText("Example dry-run detections", { x: 7.0, y: 1.95, w: 5.6, h: 0.4, fontFace: H, fontSize: 15, bold: true, color: INK, margin: 0 });
+    // right: real detections (live Sapelo2 run, Genome_72)
+    s.addText("Live detections — Genome_72 (Sapelo2)", { x: 7.0, y: 1.95, w: 5.6, h: 0.4, fontFace: H, fontSize: 14.5, bold: true, color: INK, margin: 0 });
     const rows = [
-      ["SARS-CoV-2", "High", CORAL],
-      ["Influenza A virus", "High", CORAL],
-      ["Escherichia phage T4", "Low (phage)", TEAL],
-      ["unclassified divergent RNA virus", "Novel candidate", AMBER],
-      ["low-complexity fragment", "Flagged FP", SLATE],
+      ["SARS-related coronavirus", "High", CORAL],
+      ["Norwalk / Norovirus", "High", CORAL],
+      ["PMMoV", "Control", TEAL],
+      ["unclassified divergent signal", "Novel candidate", AMBER],
+      ["low-read / low-complexity hit", "Flagged FP", SLATE],
     ];
     let y = 2.5; const rw = W - M - 7.0, rh = 0.62;
     rows.forEach((r) => {
@@ -477,8 +595,8 @@ async function build() {
       s.addText(r[1], { x: 7.0 + rw - 2.15, y: y + 0.13, w: 2.0, h: 0.36, fontFace: H, fontSize: 10.5, bold: true, color: WHITE, align: "center", valign: "middle", margin: 0 });
       y += rh + 0.16;
     });
-    s.addText("Synthetic data exercises every branch: risk escalation, phage flagging, novelty & human review.",
-      { x: 7.0, y: y + 0.05, w: rw, h: 0.7, fontFace: B, fontSize: 11.5, italic: true, color: SLATE, lineSpacingMultiple: 1.1, margin: 0 });
+    s.addText("Real GOTTCHA2 output, parsed locally — every branch exercised: risk escalation, control handling, novelty & human review.",
+      { x: 7.0, y: y + 0.05, w: rw, h: 0.7, fontFace: B, fontSize: 11, italic: true, color: SLATE, lineSpacingMultiple: 1.1, margin: 0 });
   }
 
   // ---------- 13. HOW TO RUN ----------
@@ -488,23 +606,24 @@ async function build() {
     s.addText("GET STARTED", { x: M, y: 0.6, w: 8, h: 0.3, fontFace: H, fontSize: 12, bold: true, color: MINT, charSpacing: 3, margin: 0 });
     s.addText("How to run it", { x: M, y: 0.88, w: W - 2 * M, h: 0.6, fontFace: H, fontSize: 28, bold: true, color: WHITE, margin: 0 });
     const blocks = [
-      ["terminal", "Install", "pip install -e \".[dev]\""],
-      ["diagram", "Inspect the graph", "metamavs graph --config configs/example_config.yaml"],
-      ["check", "Validate inputs", "metamavs validate --config configs/example_config.yaml"],
-      ["robot", "Run (dry-run)", "metamavs run --config configs/example_config.yaml --dry-run"],
-      ["clip", "Test", "pytest    # 37 passing"],
+      ["terminal", "Install", "pip install -e \".[dev]\"      # +\".[llm]\" for LLM agents"],
+      ["diagram", "Inspect the graph", "metamavs graph    --config configs/example_config.yaml"],
+      ["robot", "Run (dry-run, key-free)", "metamavs run      --config configs/example_config.yaml --dry-run"],
+      ["server", "Run on HPC (Sapelo2)", "metamavs run      --config configs/sapelo2_config.yaml --execute"],
+      ["user", "Human review", "metamavs review   --run-dir reports/<run_name> --approve"],
+      ["clip", "Test", "pytest    # 119 passing"],
     ];
-    let y = 2.0; const h = 0.86, g = 0.16;
+    let y = 1.78; const h = 0.74, g = 0.13;
     blocks.forEach((bk) => {
       s.addShape("rect", { x: M, y, w: W - 2 * M, h, fill: { color: INK2 }, shadow: shadow() });
-      iconCircle(s, M + 0.22, y + 0.16, 0.54, TEAL, I[bk[0]], 0.5);
-      s.addText(bk[1], { x: M + 1.0, y, w: 2.7, h, fontFace: H, fontSize: 14.5, bold: true, color: WHITE, valign: "middle", margin: 0 });
-      s.addText(bk[2], { x: M + 3.8, y, w: W - 2 * M - 4.0, h, fontFace: "Consolas", fontSize: 13.5, color: MINT, valign: "middle", margin: 0 });
+      iconCircle(s, M + 0.2, y + 0.12, 0.5, TEAL, I[bk[0]], 0.5);
+      s.addText(bk[1], { x: M + 0.95, y, w: 2.95, h, fontFace: H, fontSize: 13, bold: true, color: WHITE, valign: "middle", margin: 0 });
+      s.addText(bk[2], { x: M + 3.95, y, w: W - 2 * M - 4.15, h, fontFace: "Consolas", fontSize: 11.5, color: MINT, valign: "middle", margin: 0 });
       y += h + g;
     });
   }
 
-  // ---------- 14. CLOSING ----------
+  // ---------- 16. CLOSING ----------
   {
     const s = pres.addSlide();
     s.background = { color: INK };
@@ -512,13 +631,13 @@ async function build() {
     s.addShape("rect", { x: 0, y: 0, w: 4.4, h: 0.12, fill: { color: MINT } });
     iconCircle(s, M, 1.5, 1.0, TEAL, I.virus, 0.5);
     s.addText("MetaMAVS in one line", { x: M, y: 2.7, w: 11, h: 0.5, fontFace: H, fontSize: 16, bold: true, color: MINT, margin: 0 });
-    s.addText("A LangGraph multi-agent virus-surveillance workflow — deterministic today, LLM-ready tomorrow.",
-      { x: M, y: 3.15, w: 11.6, h: 1.1, fontFace: H, fontSize: 30, bold: true, color: WHITE, lineSpacingMultiple: 1.05, margin: 0 });
+    s.addText("A LangGraph multi-agent virus-surveillance workflow — deterministic core, real HPC execution & grounded LLM agents.",
+      { x: M, y: 3.15, w: 11.8, h: 1.2, fontFace: H, fontSize: 27, bold: true, color: WHITE, lineSpacingMultiple: 1.05, margin: 0 });
     // takeaways
     const t = [
-      ["check", "Phase 1 delivered: 12 nodes, routing, HITL, reports, 37 tests"],
-      ["list", "4-phase roadmap; each phase stays runnable"],
-      ["layer", "LangGraph is the sole framework; scientific caution throughout"],
+      ["check", "All 4 phases delivered: 16 nodes, routing, HITL, reports, 119 tests"],
+      ["server", "Verified live on UGA Sapelo2; 6 NCBI-grounded LLM agents (key-free fallback)"],
+      ["layer", "LangGraph is the sole framework; scientific caution enforced throughout"],
     ];
     let y = 4.55;
     t.forEach((it) => {
