@@ -45,6 +45,12 @@ llm:
   effort: medium
   max_tokens: 4000
 
+ncbi:
+  enabled: true              # ground taxonomy/risk LLM in verified NCBI lineage (local controller needs internet)
+  email: ""                  # recommended: your email for NCBI E-utilities etiquette
+  # api_key: ""              # optional NCBI API key (raises rate limit)
+  timeout_s: 15
+
 hpc:
   backend: ssh
   host: sapelo2.gacrc.uga.edu

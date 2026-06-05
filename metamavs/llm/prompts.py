@@ -64,15 +64,24 @@ Respond with JSON ONLY, no prose:
 """
 
 
-def build_taxonomy_user(candidates: list[dict[str, Any]]) -> str:
-    rows = [
-        {"taxon_name": c.get("taxon_name"), "family": c.get("family"),
-         "taxid": int(c.get("taxid", 0) or 0), "total_reads": int(c.get("total_reads", 0) or 0),
-         "max_confidence": float(c.get("max_confidence", 0.0) or 0.0)}
-        for c in candidates
-    ]
+def build_taxonomy_user(candidates: list[dict[str, Any]], lineages: dict[int, dict] | None = None) -> str:
+    lineages = lineages or {}
+    rows = []
+    for c in candidates:
+        tid = int(c.get("taxid", 0) or 0)
+        row = {"taxon_name": c.get("taxon_name"), "family": c.get("family"), "taxid": tid,
+               "total_reads": int(c.get("total_reads", 0) or 0),
+               "max_confidence": float(c.get("max_confidence", 0.0) or 0.0)}
+        lin = lineages.get(tid)
+        if lin:  # verified NCBI Taxonomy facts — prefer these over prior knowledge
+            row["ncbi_division"] = lin.get("division")
+            row["ncbi_superkingdom"] = lin.get("superkingdom")
+            row["ncbi_lineage"] = lin.get("lineage")
+        rows.append(row)
+    note = ("\n\nWhere present, ncbi_* fields are AUTHORITATIVE NCBI Taxonomy facts — "
+            "trust them over prior knowledge (division 'Phages' => bacteriophage)." if lineages else "")
     return ("Classify these candidate viral taxa. Use only this data.\n\n```json\n"
-            + json.dumps(rows, indent=2, default=str) + "\n```")
+            + json.dumps(rows, indent=2, default=str) + "\n```" + note)
 
 
 # --- risk assessment (LLM agent) --------------------------------------------

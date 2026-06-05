@@ -140,6 +140,18 @@ class HPCConfig(BaseModel):
     mock_fail_jobs: list[str] = Field(default_factory=list)
 
 
+class NcbiConfig(BaseModel):
+    """Optional NCBI Taxonomy lookup to ground taxonomy/risk in verified lineage.
+
+    Off by default (keeps MetaMAVS offline-capable). Runs on the local controller.
+    """
+
+    enabled: bool = False
+    api_key: str | None = None
+    email: str | None = None
+    timeout_s: int = Field(default=15, ge=1)
+
+
 class LLMConfig(BaseModel):
     """Phase 4: optional LLM interpretation (Anthropic Claude). Off by default."""
 
@@ -174,6 +186,7 @@ class MetaMAVSConfig(BaseModel):
     slurm: SlurmConfig = Field(default_factory=SlurmConfig)
     hpc: HPCConfig = Field(default_factory=HPCConfig)
     llm: LLMConfig = Field(default_factory=LLMConfig)
+    ncbi: NcbiConfig = Field(default_factory=NcbiConfig)
 
 
 def load_config(path: str | Path) -> MetaMAVSConfig:

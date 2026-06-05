@@ -130,15 +130,21 @@ def risk_assessment_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     ]
     tax_rows = [r for r in all_rows if not bool(r.get("is_control", False))]
 
-    # Build evidence and ask the LLM agent (optional) to assess risk.
-    evidence = [
-        {"taxon_name": str(r["taxon_name"]), "total_reads": int(r.get("total_reads", 0) or 0),
-         "is_phage": bool(r.get("is_phage", False)),
-         "false_positive": bool(r.get("false_positive_flag", False)),
-         "trend": trend.get(str(r["taxon_name"]), "stable"),
-         "matches_high_risk_pathogen": match_high_risk(str(r["taxon_name"]), int(r.get("taxid", 0) or 0), high_risk) is not None}
-        for r in tax_rows
-    ]
+    # Build evidence and ask the LLM agent (optional) to assess risk. Includes
+    # verified NCBI lineage (when taxonomy fetched it) so the LLM reasons over
+    # ground truth, not memory.
+    def _ev(r: dict) -> dict:
+        e = {"taxon_name": str(r["taxon_name"]), "total_reads": int(r.get("total_reads", 0) or 0),
+             "is_phage": bool(r.get("is_phage", False)),
+             "false_positive": bool(r.get("false_positive_flag", False)),
+             "trend": trend.get(str(r["taxon_name"]), "stable"),
+             "matches_high_risk_pathogen": match_high_risk(str(r["taxon_name"]), int(r.get("taxid", 0) or 0), high_risk) is not None}
+        if str(r.get("ncbi_lineage", "") or ""):
+            e["ncbi_superkingdom"] = r.get("ncbi_superkingdom", "")
+            e["ncbi_lineage"] = r.get("ncbi_lineage", "")
+        return e
+
+    evidence = [_ev(r) for r in tax_rows]
     llm_map = _llm_risk(state, evidence)
     mode = "llm" if llm_map else "deterministic"
 

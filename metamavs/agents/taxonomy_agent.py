@@ -12,6 +12,7 @@ from ..llm import generate_json, llm_available
 from ..llm.prompts import TAXONOMY_SYSTEM, build_taxonomy_user
 from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
+from ..taxonomy_db import fetch_lineages
 from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
 from ..utils.taxonomy_utils import flag_false_positive, is_phage
@@ -19,7 +20,18 @@ from ..utils.taxonomy_utils import flag_false_positive, is_phage
 logger = get_logger("agents.taxonomy")
 
 
-def _llm_taxonomy(state: MetaMAVSState, candidates: list[dict]) -> dict[str, dict]:
+def _ncbi_lineages(state: MetaMAVSState, candidates: list[dict]) -> dict[int, dict]:
+    """Fetch verified NCBI Taxonomy lineages for candidate taxids, or {}."""
+
+    ncbi_cfg = (state.get("config", {}) or {}).get("ncbi", {}) or {}
+    if not ncbi_cfg.get("enabled", False) or not candidates:
+        return {}
+    taxids = [int(c.get("taxid", 0) or 0) for c in candidates]
+    return fetch_lineages(taxids, api_key=ncbi_cfg.get("api_key"),
+                          email=ncbi_cfg.get("email"), timeout_s=int(ncbi_cfg.get("timeout_s", 15)))
+
+
+def _llm_taxonomy(state: MetaMAVSState, candidates: list[dict], lineages: dict[int, dict]) -> dict[str, dict]:
     """Return {taxon_name: {is_phage, false_positive, rationale}} from the LLM, or {}.
 
     Used to AUGMENT the deterministic flags (union — can only add caution).
@@ -29,7 +41,7 @@ def _llm_taxonomy(state: MetaMAVSState, candidates: list[dict]) -> dict[str, dic
     if not llm_cfg.get("enabled", False) or not llm_available() or not candidates:
         return {}
     data = generate_json(
-        TAXONOMY_SYSTEM, build_taxonomy_user(candidates), cached_prefix=SHARED_REFERENCE,
+        TAXONOMY_SYSTEM, build_taxonomy_user(candidates, lineages), cached_prefix=SHARED_REFERENCE,
         model=llm_cfg.get("model", "claude-opus-4-8"),
         effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)),
     )
@@ -65,10 +77,14 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     cleaned: list[dict[str, Any]] = []
     fp_flags: list[dict[str, Any]] = []
 
+    # Verified NCBI Taxonomy lineages (optional) — ground truth for phage/lineage.
+    lineages = _ncbi_lineages(state, candidates)
     # LLM agent layer (optional). Augments deterministic flags within safety
     # rails: it can only ADD caution (union of flags), never remove it.
-    llm_map = _llm_taxonomy(state, candidates)
+    llm_map = _llm_taxonomy(state, candidates, lineages)
     mode = "llm" if llm_map else "deterministic"
+    if lineages:
+        mode += "+ncbi"
 
     for c in candidates:
         taxon = str(c.get("taxon_name", ""))
@@ -84,6 +100,19 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         flagged, reasons = flag_false_positive(
             {"taxon_name": taxon, "reads": reads, "confidence": conf}
         )
+
+        # Verified NCBI lineage (authoritative): Division 'Phages' => phage.
+        lin = lineages.get(taxid)
+        ncbi_division = ncbi_superkingdom = ncbi_lineage = ""
+        if lin:
+            ncbi_division = lin.get("division", "")
+            ncbi_superkingdom = lin.get("superkingdom", "")
+            ncbi_lineage = lin.get("lineage", "")
+            if lin.get("is_phage") and not phage:
+                phage = True
+                reasons.append("ncbi:phage")
+            if lin.get("rank"):
+                rank = lin["rank"]
 
         # Merge LLM judgement (union → only adds caution) + keep its rationale.
         llm_rationale = ""
@@ -109,6 +138,9 @@ def taxonomy_classification_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             "control_label": control or "",
             "false_positive_flag": flagged,
             "flag_reasons": ";".join(reasons),
+            "ncbi_division": ncbi_division,
+            "ncbi_superkingdom": ncbi_superkingdom,
+            "ncbi_lineage": ncbi_lineage,
             "llm_rationale": llm_rationale,
         }
         cleaned.append(record)
