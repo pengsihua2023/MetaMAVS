@@ -39,6 +39,9 @@ risk:
 report:
   formats: [markdown, html]
 
+human_review:
+  mode: pause                # pause at the review checkpoint; approve via `metamavs review`
+
 llm:
   enabled: true              # Phase 4: AI-assisted interpretation (needs ANTHROPIC_API_KEY in .env)
   model: claude-opus-4-8
