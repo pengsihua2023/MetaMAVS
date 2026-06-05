@@ -71,6 +71,8 @@ def _build_markdown(state: MetaMAVSState) -> str:
                  for r in qc["per_sample"]],
             )
         )
+    if qc.get("llm_assessment"):
+        parts.append(f"\n_AI QC note:_ {qc['llm_assessment']}\n")
 
     # Host removal
     hr = state.get("host_removal_summary", {})
@@ -113,6 +115,8 @@ def _build_markdown(state: MetaMAVSState) -> str:
         )
     if trend.get("sharp_increase"):
         parts.append(f"\n**Sharp increases:** {', '.join(trend['sharp_increase'])}\n")
+    if trend.get("llm_interpretation"):
+        parts.append(f"\n_AI trend interpretation:_\n\n{trend['llm_interpretation']}\n")
 
     # Novel candidates
     novel = state.get("novel_candidate_summary", {})

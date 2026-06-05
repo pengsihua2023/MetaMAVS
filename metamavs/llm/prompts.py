@@ -113,6 +113,49 @@ def build_risk_user(evidence: list[dict[str, Any]]) -> str:
             + json.dumps(evidence, indent=2, default=str) + "\n```" + ref)
 
 
+# --- QC adequacy interpretation (LLM agent) ---------------------------------
+QC_SYSTEM = """\
+You are a sequencing QC analyst for metagenomic viral surveillance. Given
+per-sample QC metrics (mean quality, total reads, adapter %, pass/fail and the
+thresholds used), assess whether the data are ADEQUATE for sensitive viral
+detection and flag concerns: low sequencing depth (limits sensitivity for
+low-abundance viruses), low base quality, adapter contamination, or sample
+imbalance. Be concise and practical; recommend re-sequencing or cautious
+interpretation where warranted. Do not invent metrics. Markdown, under 140 words.\
+"""
+
+
+def build_qc_user(qc_summary: dict[str, Any]) -> str:
+    payload = {"thresholds": qc_summary.get("thresholds", {}),
+               "n_pass": qc_summary.get("n_pass"), "n_fail": qc_summary.get("n_fail"),
+               "per_sample": qc_summary.get("per_sample", [])}
+    return ("Assess QC adequacy for these samples. Use only this data.\n\n```json\n"
+            + json.dumps(payload, indent=2, default=str) + "\n```")
+
+
+# --- abundance / trend interpretation (LLM agent) ---------------------------
+ABUNDANCE_SYSTEM = """\
+You are a wastewater surveillance analyst interpreting viral ABUNDANCE TRENDS.
+Given per-taxon normalized abundance and trend summaries (first vs last RPM, %
+change, direction) across samples/time points/locations, interpret the
+epidemiological meaning cautiously. Hard rules: a single time point is NOT a
+trend ("stable" from one sample is uninformative); abundance reflects
+environmental load and assay sensitivity, not case counts; do not over-claim.
+Highlight genuine increases worth monitoring and recommend repeat sampling.
+Markdown, under 170 words.\
+"""
+
+
+def build_abundance_user(trend_summary: dict[str, Any], n_samples: int) -> str:
+    payload = {"n_samples": n_samples,
+               "n_taxa": trend_summary.get("n_taxa"),
+               "increasing": trend_summary.get("increasing", []),
+               "sharp_increase": trend_summary.get("sharp_increase", []),
+               "top_by_mean_rpm": trend_summary.get("top_by_mean_rpm", [])}
+    return ("Interpret these viral abundance trends. Use only this data.\n\n```json\n"
+            + json.dumps(payload, indent=2, default=str) + "\n```")
+
+
 # --- novel/divergent virus candidate interpretation (LLM agent) -------------
 NOVEL_SYSTEM = """\
 You are a virologist assessing NOVEL or DIVERGENT viral candidates from \

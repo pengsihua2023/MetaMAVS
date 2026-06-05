@@ -7,10 +7,27 @@ from typing import Any
 
 import pandas as pd
 
+from ..llm import generate, llm_available
+from ..llm.prompts import QC_SYSTEM, build_qc_user
+from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
 from ..utils.execution import make_runner, maybe_execute_step
 from ..utils.file_utils import write_commands, write_json
 from ..utils.logging_utils import get_logger
+
+
+def _llm_qc(state: MetaMAVSState, qc_summary: dict) -> str | None:
+    """Optional LLM QC-adequacy assessment; None on disabled/no-key/failure."""
+
+    llm_cfg = (state.get("config", {}) or {}).get("llm", {}) or {}
+    if not llm_cfg.get("enabled", False) or not llm_available() or not qc_summary.get("per_sample"):
+        return None
+    # Don't interpret synthetic/placeholder QC (e.g. when QC isn't actually run).
+    if "synthetic" in str(qc_summary.get("note", "")).lower():
+        return None
+    return generate(QC_SYSTEM, build_qc_user(qc_summary), cached_prefix=SHARED_REFERENCE,
+                    model=llm_cfg.get("model", "claude-opus-4-8"),
+                    effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)))
 
 logger = get_logger("agents.qc")
 
@@ -99,6 +116,10 @@ def qc_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "per_sample": per_sample,
         "note": "Metrics are synthetic placeholders in dry-run mode.",
     }
+    llm_qc = _llm_qc(state, qc_summary)
+    if llm_qc:
+        qc_summary["llm_assessment"] = llm_qc
+        qc_summary["mode"] = "llm"
     summary_path = write_json(run_dir / "intermediate" / "qc_summary.json", qc_summary)
 
     warnings = list(exec_warnings)

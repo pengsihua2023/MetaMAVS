@@ -47,7 +47,7 @@ llm:
 
 ncbi:
   enabled: true              # ground taxonomy/risk LLM in verified NCBI lineage (local controller needs internet)
-  email: ""                  # recommended: your email for NCBI E-utilities etiquette
+  email: pengsihua99@gmail.com   # for NCBI E-utilities etiquette / rate-limit contact
   # api_key: ""              # optional NCBI API key (raises rate limit)
   timeout_s: 15
 

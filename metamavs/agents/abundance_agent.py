@@ -7,6 +7,9 @@ from typing import Any
 
 import pandas as pd
 
+from ..llm import generate, llm_available
+from ..llm.prompts import ABUNDANCE_SYSTEM, build_abundance_user
+from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
 from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
@@ -124,6 +127,18 @@ def abundance_analysis_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "sharp_increase": sharp,
         "top_by_mean_rpm": trends[:5],
     }
+
+    # Optional LLM agent: interpret the abundance trends epidemiologically.
+    llm_cfg = (state.get("config", {}) or {}).get("llm", {}) or {}
+    if trends and llm_cfg.get("enabled", False) and llm_available():
+        n_samples = len({r["sample_id"] for r in rows})
+        txt = generate(ABUNDANCE_SYSTEM, build_abundance_user(trend_summary, n_samples),
+                       cached_prefix=SHARED_REFERENCE, model=llm_cfg.get("model", "claude-opus-4-8"),
+                       effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)))
+        if txt:
+            trend_summary["llm_interpretation"] = txt
+            trend_summary["mode"] = "llm"
+            logger.info("Abundance: LLM trend interpretation generated")
     write_json(run_dir / "intermediate" / "trend_summary.json", trend_summary)
 
     logger.info("Abundance: %d taxa, %d increasing", len(trends), len(trend_summary["increasing"]))
