@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from .reference import pathogen_snippets
+
 # --- stable, cacheable system prompt ----------------------------------------
 SYSTEM_PROMPT = """\
 You are a viral metagenomic surveillance analyst writing the interpretation \
@@ -96,8 +98,34 @@ Respond with JSON ONLY, no prose:
 
 
 def build_risk_user(evidence: list[dict[str, Any]]) -> str:
+    snippets = pathogen_snippets([str(e.get("taxon_name", "")) for e in evidence])
+    ref = ("\n\nReference notes for detected taxa (background only):\n- " + "\n- ".join(snippets)) if snippets else ""
     return ("Assess epidemiological risk for these taxa. Use only this data.\n\n```json\n"
-            + json.dumps(evidence, indent=2, default=str) + "\n```")
+            + json.dumps(evidence, indent=2, default=str) + "\n```" + ref)
+
+
+# --- novel/divergent virus candidate interpretation (LLM agent) -------------
+NOVEL_SYSTEM = """\
+You are a virologist assessing NOVEL or DIVERGENT viral candidates from \
+metagenomic assembly/screening of wastewater/environmental samples. For each \
+candidate (putative taxon, family hint, supporting reads, classification \
+confidence, evidence) give a brief, cautious assessment: what viral group it may \
+belong to, how confident the evidence is, plausibility of being a genuine novel \
+virus vs artefact/chimera, and the recommended characterisation steps \
+(e.g. contig curation, CheckV completeness, ORF/RdRp search, phylogenetics).
+
+Be conservative — these are uncertain signals, not discoveries. Do not name a \
+specific new species or claim novelty as fact.
+
+Respond with JSON ONLY:
+{"candidates":[{"candidate_id": str, "assessment": str, "confidence": "low|medium|high", \
+"recommended_steps": [str]}], "summary": str}\
+"""
+
+
+def build_novel_user(candidates: list[dict[str, Any]]) -> str:
+    return ("Assess these novel/divergent viral candidates. Use only this data.\n\n```json\n"
+            + json.dumps(candidates, indent=2, default=str) + "\n```")
 
 
 def build_user_prompt(state: dict[str, Any]) -> str:
@@ -131,7 +159,10 @@ def build_user_prompt(state: dict[str, Any]) -> str:
         "novel_candidates": novel.get("n_candidates", 0),
         "recommended_actions_deterministic": state.get("recommended_followup_actions", []),
     }
+    names = [str(t.get("taxon_name", "")) for t in risk.get("top_risks", [])]
+    snippets = pathogen_snippets(names)
+    ref = ("\n\nReference notes for detected taxa (background only):\n- " + "\n- ".join(snippets)) if snippets else ""
     return (
         "Interpret the following MetaMAVS surveillance results. Use only this data.\n\n"
-        "```json\n" + json.dumps(payload, indent=2, default=str) + "\n```"
+        "```json\n" + json.dumps(payload, indent=2, default=str) + "\n```" + ref
     )

@@ -7,6 +7,9 @@ from typing import Any
 
 import pandas as pd
 
+from ..llm import generate_json, llm_available
+from ..llm.prompts import NOVEL_SYSTEM, build_novel_user
+from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
 from ..utils.execution import make_runner, maybe_execute_step
 from ..utils.file_utils import read_csv_safe, write_commands, write_csv, write_json
@@ -129,12 +132,28 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
                 )
 
     cand_path = write_csv(run_dir / "tables" / "novel_candidate_table.csv", candidates)
+
+    # LLM agent layer (optional): interpret the novel/divergent candidates.
+    llm_cfg = config.get("llm", {}) or {}
+    llm_assessment = None
+    if candidates and llm_cfg.get("enabled", False) and llm_available():
+        data = generate_json(
+            NOVEL_SYSTEM, build_novel_user(candidates), cached_prefix=SHARED_REFERENCE,
+            model=llm_cfg.get("model", "claude-opus-4-8"),
+            effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)),
+        )
+        if data:
+            llm_assessment = data
+            logger.info("Novel screening: LLM assessed %d candidate(s)", len(candidates))
+
     summary = {
         "n_candidates": len(candidates),
         "assembler": assembler,
         "screening_tools": screen_tools,
         "candidates": candidates,
         "exec_mode": exec_report["mode"],
+        "llm_assessment": llm_assessment,
+        "mode": "llm" if llm_assessment else "deterministic",
         "note": "Candidates derived from synthetic taxonomy in dry-run mode.",
     }
     write_json(run_dir / "intermediate" / "novel_candidate_summary.json", summary)

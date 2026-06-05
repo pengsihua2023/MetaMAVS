@@ -54,11 +54,14 @@ def generate(
     effort: str = "medium",
     max_tokens: int = 4000,
     use_thinking: bool = True,
+    cached_prefix: str | None = None,
 ) -> str | None:
     """Generate text from Claude, or return None on any failure / no key.
 
-    The ``system`` prompt is sent as a cached block (stable across runs → cheap
-    cache reads); the volatile per-run ``user`` content is not cached.
+    If ``cached_prefix`` is given (e.g. a large shared reference) it is the
+    FIRST system block and carries the cache breakpoint — stable across agents
+    so the prefix is reused via prompt caching. The agent-specific ``system``
+    follows it; the per-run ``user`` content stays uncached.
     """
 
     if not llm_available():
@@ -69,10 +72,17 @@ def generate(
         import anthropic
 
         client = anthropic.Anthropic()
+        if cached_prefix:
+            system_blocks = [
+                {"type": "text", "text": cached_prefix, "cache_control": {"type": "ephemeral"}},
+                {"type": "text", "text": system},
+            ]
+        else:
+            system_blocks = [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]
         kwargs: dict = {
             "model": model,
             "max_tokens": max_tokens,
-            "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+            "system": system_blocks,
             "messages": [{"role": "user", "content": user}],
         }
         if use_thinking:

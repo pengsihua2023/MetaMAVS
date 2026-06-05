@@ -13,6 +13,7 @@ from typing import Any
 
 from ..llm import generate, llm_available
 from ..llm.prompts import SYSTEM_PROMPT, build_user_prompt
+from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
 from ..utils.file_utils import write_text
 from ..utils.logging_utils import get_logger
@@ -41,6 +42,7 @@ def llm_interpretation_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     narrative = generate(
         SYSTEM_PROMPT,
         build_user_prompt(state),
+        cached_prefix=SHARED_REFERENCE,
         model=llm_cfg.get("model", "claude-opus-4-8"),
         effort=llm_cfg.get("effort", "medium"),
         max_tokens=int(llm_cfg.get("max_tokens", 4000)),

@@ -10,6 +10,7 @@ import pandas as pd
 from ..controls import match_control
 from ..llm import generate_json, llm_available
 from ..llm.prompts import TAXONOMY_SYSTEM, build_taxonomy_user
+from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
 from ..utils.file_utils import read_csv_safe, write_csv, write_json
 from ..utils.logging_utils import get_logger
@@ -28,7 +29,7 @@ def _llm_taxonomy(state: MetaMAVSState, candidates: list[dict]) -> dict[str, dic
     if not llm_cfg.get("enabled", False) or not llm_available() or not candidates:
         return {}
     data = generate_json(
-        TAXONOMY_SYSTEM, build_taxonomy_user(candidates),
+        TAXONOMY_SYSTEM, build_taxonomy_user(candidates), cached_prefix=SHARED_REFERENCE,
         model=llm_cfg.get("model", "claude-opus-4-8"),
         effort=llm_cfg.get("effort", "medium"), max_tokens=int(llm_cfg.get("max_tokens", 4000)),
     )
