@@ -10,6 +10,7 @@ Commands
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Optional
@@ -54,6 +55,34 @@ def run(
     final_state = run_local_workflow(
         cfg, config_path=str(config), dry_run=effective_dry_run, run_id=run_id
     )
+
+    # Paused for human review (human_review.mode: pause): the run exited before
+    # final_summary, so print a PAUSED banner with how to resume — not an
+    # all-empty "complete" banner.
+    if final_state.get("awaiting_review"):
+        run_dir = final_state.get("run_dir", "")
+        # Triggers/context live in the review_request.json the pause wrote.
+        ctx: dict = {}
+        triggers: list = []
+        req_path = final_state.get("review_request_path")
+        if req_path and Path(req_path).exists():
+            try:
+                req = json.loads(Path(req_path).read_text())
+                ctx = req.get("context", {}) or {}
+                triggers = req.get("triggers", []) or []
+            except Exception:
+                pass
+        _echo("\n" + "=" * 60)
+        _echo("MetaMAVS run PAUSED — awaiting human review")
+        _echo("=" * 60)
+        _echo(f"  Overall risk  : {ctx.get('overall_risk')}")
+        _echo(f"  Triggers      : {', '.join(triggers) or '—'}")
+        _echo(f"  Run directory : {run_dir}")
+        _echo("\n  Approve & resume (generates the report):")
+        _echo(f"    metamavs review --run-dir {run_dir} --approve --notes \"...\"")
+        _echo(f"    metamavs review --run-dir {run_dir}            # interactive")
+        _echo("=" * 60)
+        return
 
     summary = final_state.get("final_summary", {})
     _echo("\n" + "=" * 60)
