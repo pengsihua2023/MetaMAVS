@@ -135,8 +135,10 @@ def resume_after_review(run_dir: str | Path, *, approved: bool, notes: str = "")
         for node in (llm_interpretation_agent_node, report_writer_agent_node, final_summary_node):
             _merge(state, node(state))
     else:
-        _merge(state, final_summary_node(state))
+        # Set the terminal status BEFORE final_summary so it is preserved in the
+        # returned state AND persisted to state.json by final_summary_node.
         state["workflow_status"] = "rejected_by_reviewer"
+        _merge(state, final_summary_node(state))
 
     (run_dir / "paused_state.json").unlink(missing_ok=True)
     return state

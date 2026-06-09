@@ -44,6 +44,30 @@ def test_resume_approve_finishes_report(tmp_path):
     assert not (run_dir / "paused_state.json").exists()    # pause marker cleared
 
 
+def test_resume_persists_final_state_to_disk(tmp_path):
+    """After resume, the on-disk state.json reflects the finished run, not the
+    pre-final_summary 'running' state (regression: was workflow_status=running
+    with an empty final_summary)."""
+    import json
+
+    _final, run_dir = _paused_run(tmp_path)
+    resume_after_review(run_dir, approved=True, notes="ok")
+    disk = json.loads((run_dir / "state.json").read_text())
+    assert disk["workflow_status"] in {"completed", "completed_with_warnings"}
+    assert disk.get("final_summary", {}).get("status") == disk["workflow_status"]
+    assert disk["final_summary"]["overall_risk"]            # populated, not empty
+    assert disk["markdown_report_path"]
+
+
+def test_resume_reject_persists_rejected_status_to_disk(tmp_path):
+    import json
+
+    _final, run_dir = _paused_run(tmp_path)
+    resume_after_review(run_dir, approved=False, notes="no")
+    disk = json.loads((run_dir / "state.json").read_text())
+    assert disk["workflow_status"] == "rejected_by_reviewer"
+
+
 def test_resume_reject_produces_no_report(tmp_path):
     _final, run_dir = _paused_run(tmp_path)
     out = resume_after_review(run_dir, approved=False, notes="needs rework")

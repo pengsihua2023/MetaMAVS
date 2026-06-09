@@ -5,7 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ..state import MetaMAVSState, STATUS_COMPLETED, STATUS_COMPLETED_WITH_WARNINGS, STATUS_FAILED
+from ..state import (
+    MetaMAVSState,
+    STATUS_COMPLETED,
+    STATUS_COMPLETED_WITH_WARNINGS,
+    STATUS_RUNNING,
+)
 from ..utils.file_utils import write_json
 from ..utils.logging_utils import get_logger
 
@@ -22,9 +27,11 @@ def final_summary_node(state: MetaMAVSState) -> dict[str, Any]:
     warnings = state.get("warnings", []) or []
     risk = state.get("risk_summary", {}) or {}
 
-    # Preserve a failed status set by the error handler; otherwise derive it.
+    # Preserve any terminal status already set (e.g. failed by the error handler,
+    # rejected_by_reviewer). Only the initial "running"/unset status is derived
+    # here into completed / completed_with_warnings.
     status = state.get("workflow_status", "")
-    if status not in {STATUS_FAILED, STATUS_COMPLETED_WITH_WARNINGS}:
+    if status in {"", STATUS_RUNNING}:
         status = STATUS_COMPLETED_WITH_WARNINGS if warnings else STATUS_COMPLETED
 
     high_risk = [
@@ -50,8 +57,14 @@ def final_summary_node(state: MetaMAVSState) -> dict[str, Any]:
         "review_decision": state.get("review_decision"),
     }
 
-    # Persist the complete final state alongside the summary.
-    write_json(run_dir / "state.json", {k: v for k, v in state.items() if k != "config"} | {"config": state.get("config", {})})
+    # Persist the complete final state alongside the summary. Fold in this node's
+    # own outputs (final_summary, resolved status) so the on-disk state.json
+    # reflects the finished run rather than the pre-final_summary "running" state.
+    serialized = {k: v for k, v in state.items() if k != "config"}
+    serialized["config"] = state.get("config", {})
+    serialized["final_summary"] = final_summary
+    serialized["workflow_status"] = status
+    write_json(run_dir / "state.json", serialized)
     write_json(run_dir / "logs" / "final_summary.json", final_summary)
 
     logger.info("Run %s complete: status=%s, overall_risk=%s", final_summary["run_id"], status, final_summary["overall_risk"])
