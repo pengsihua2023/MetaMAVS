@@ -44,7 +44,7 @@ human_review:
 
 llm:
   enabled: true              # Phase 4: AI-assisted interpretation (needs ANTHROPIC_API_KEY in .env)
-  model: claude-opus-4-8
+  model: claude-opus-4-8     # model: claude-sonnet-4-6
   effort: medium             # low / medium / high / xhigh / max
   max_tokens: 4000
 
