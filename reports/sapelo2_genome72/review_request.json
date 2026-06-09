@@ -1,5 +1,5 @@
 {
-  "run_id": "run_20260609_000059",
+  "run_id": "run_20260609_134738",
   "triggers": [
     "overall risk = High"
   ],
@@ -11,35 +11,35 @@
         "risk_level": "High",
         "total_reads": 52,
         "trend": "stable",
-        "reasons": "[LLM] Matches configured high-risk pathogen list with adequate support (52 reads, >=10) and stable (not sharply increasing), so High rather than Critical. Recommend confirmatory RT-qPCR/amplicon sequencing."
+        "reasons": "[LLM] Matches configured high-risk list with adequate support (52 reads, >=10). Trend stable, not sharply increasing, so High rather than Critical. Recommend confirmatory RT-qPCR/amplicon sequencing."
       },
       {
         "taxon_name": "Norwalk virus",
         "risk_level": "High",
         "total_reads": 26,
         "trend": "stable",
-        "reasons": "[LLM] Norovirus matches high-risk pathogen list with adequate support (26 reads) and stable trend, so High not Critical. Recommend orthogonal confirmation before action."
+        "reasons": "[LLM] Matches configured high-risk list with adequate support (26 reads, >=10). Stable trend, so High not Critical. Recommend orthogonal confirmation."
       },
       {
         "taxon_name": "Human mastadenovirus F",
         "risk_level": "Medium",
         "total_reads": 116,
         "trend": "stable",
-        "reasons": "[LLM] Non-phage, non-high-risk-list virus with substantial support (116 reads). Enteric adenovirus is commonly shed faecally; Medium given solid signal but not on configured high-risk list."
+        "reasons": "[LLM] Non-phage, non-high-risk-list human enteric virus with substantial support (116 reads). Common faecal wastewater detection; rated Medium for substantial support."
       },
       {
         "taxon_name": "Betacoronavirus 1",
         "risk_level": "Medium",
         "total_reads": 26,
         "trend": "stable",
-        "reasons": "[LLM] Non-phage virus not on the high-risk list, with substantial support (26 reads). Medium given a solid but non-prioritised signal."
+        "reasons": "[LLM] Non-phage, non-high-risk-list human coronavirus with substantial support (26 reads). Rated Medium."
       },
       {
         "taxon_name": "Human coronavirus 229E",
         "risk_level": "Medium",
         "total_reads": 20,
         "trend": "stable",
-        "reasons": "[LLM] Common seasonal human coronavirus, not on high-risk list; 20 reads provide substantial support \u2192 Medium."
+        "reasons": "[LLM] Non-phage, non-high-risk-list seasonal human coronavirus with adequate support (20 reads). Rated Medium for substantial support."
       }
     ],
     "n_novel_candidates": 0,

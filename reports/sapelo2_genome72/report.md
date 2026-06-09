@@ -6,7 +6,7 @@
 
 - **Project:** MetaMAVS
 - **Run name:** sapelo2_genome72
-- **Run id:** run_20260609_000059
+- **Run id:** run_20260609_134738
 - **Mode:** execution
 - **Overall risk:** High
 
@@ -56,21 +56,22 @@
 
 _AI trend interpretation:_
 
-## Trend Interpretation — Single Time Point
+## Trend Interpretation — ⚠️ Single Time Point
 
-⚠️ **No trends can be assessed.** This dataset contains **one sample** (`n_samples: 1`). All "stable" labels and `0.0%` changes are **artefacts of having a single time point**, not evidence of stability. A genuine trend requires repeated sampling at the same site.
+**No trends can be assessed.** With `n_samples = 1`, every "stable" label and `0.0%` change is an **artefact of having one observation**, not evidence of stability. A genuine trend requires repeated sampling at the same site over time. Treat all values below as a single snapshot of environmental load.
 
-### What the data does show (cross-sectional snapshot only)
-- **Bacteriophages** (*Obolenskvirus AP22*, *Phikzvirus phiKZ*) top the list — these are **environmental/faecal indicators, not human pathogens**. Report separately.
-- **Pepper mild mottle virus** (44 RPM) is a **faecal-load normalization marker**, not a threat — it confirms human faecal input.
-- **Human mastadenovirus F** (77 RPM) and **SARS-CoV-2-related coronavirus** (35 RPM): detected sequence signals of potential public-health relevance, at moderate normalized abundance.
+### Snapshot notes (not trends)
+- **Obolenskvirus AP22 / Phikzvirus phiKZ** — bacteriophages; environmental/faecal indicators, **not human pathogens**. Report separately.
+- **Pepper mild mottle virus (44 RPM)** — normalization/faecal-load marker, **not a threat**. Confirms faecal input.
+- **Human mastadenovirus F (77 RPM)** — enteric adenovirus, stable non-enveloped virus; a detected sequence signal worth tracking.
+- **SARS-CoV-2-related coronavirus (35 RPM)** — respiratory pathogen, established WBE target; a detected signal, not a case count.
 
 ### Recommendations
-1. **Collect repeat samples** across time points to establish any real trajectory.
-2. Treat all values as **environmental load**, not case counts.
-3. For the pathogen signals (adenovirus F, SARS-CoV-2), **confirm with targeted RT-qPCR** before any action.
+1. **Collect repeat composite samples** across time points to establish any real trajectory.
+2. Confirm pathogen signals (adenovirus, SARS-CoV-2) via **targeted RT-qPCR**.
+3. Normalize future comparisons to **PMMoV**.
 
-No increases or sharp rises are present to flag.
+No increases or sharp increases reported.
 
 ## 7. Novel / Divergent Virus Candidates
 
@@ -82,11 +83,11 @@ _No novel candidates above threshold._
 
 | Taxon | Risk | Reads | Trend | Reasons |
 | --- | --- | --- | --- | --- |
-| Severe acute respiratory syndrome-related coronavirus | High | 52 | stable | [LLM] Matches configured high-risk pathogen list with adequate support (52 reads, >=10) and stable (not sharply increasing), so High rather than Critical. Recommend confirmatory RT-qPCR/amplicon sequencing. |
-| Norwalk virus | High | 26 | stable | [LLM] Norovirus matches high-risk pathogen list with adequate support (26 reads) and stable trend, so High not Critical. Recommend orthogonal confirmation before action. |
-| Human mastadenovirus F | Medium | 116 | stable | [LLM] Non-phage, non-high-risk-list virus with substantial support (116 reads). Enteric adenovirus is commonly shed faecally; Medium given solid signal but not on configured high-risk list. |
-| Betacoronavirus 1 | Medium | 26 | stable | [LLM] Non-phage virus not on the high-risk list, with substantial support (26 reads). Medium given a solid but non-prioritised signal. |
-| Human coronavirus 229E | Medium | 20 | stable | [LLM] Common seasonal human coronavirus, not on high-risk list; 20 reads provide substantial support → Medium. |
+| Severe acute respiratory syndrome-related coronavirus | High | 52 | stable | [LLM] Matches configured high-risk list with adequate support (52 reads, >=10). Trend stable, not sharply increasing, so High rather than Critical. Recommend confirmatory RT-qPCR/amplicon sequencing. |
+| Norwalk virus | High | 26 | stable | [LLM] Matches configured high-risk list with adequate support (26 reads, >=10). Stable trend, so High not Critical. Recommend orthogonal confirmation. |
+| Human mastadenovirus F | Medium | 116 | stable | [LLM] Non-phage, non-high-risk-list human enteric virus with substantial support (116 reads). Common faecal wastewater detection; rated Medium for substantial support. |
+| Betacoronavirus 1 | Medium | 26 | stable | [LLM] Non-phage, non-high-risk-list human coronavirus with substantial support (26 reads). Rated Medium. |
+| Human coronavirus 229E | Medium | 20 | stable | [LLM] Non-phage, non-high-risk-list seasonal human coronavirus with adequate support (20 reads). Rated Medium for substantial support. |
 
 
 **Normalization controls (not ranked as threats):** Pepper mild mottle virus (66 reads — Pepper mild mottle virus (PMMoV))
@@ -97,35 +98,34 @@ _Generated by claude-opus-4-8. Advisory only — the deterministic risk assessme
 
 ## Executive Summary
 
-This report interprets a single wastewater/environmental metagenome from site **sapelo2** (collected 2025-12-02), classified with one tool (GOTTCHA2). The run yielded an overall **High** risk rating driven by two detected sequence signals on the configured high-risk pathogen list: SARS-CoV-2-related coronavirus (52 reads) and norovirus/Norwalk virus (26 reads). These are **detected sequence signals only**, not confirmed infections or outbreaks. Because this is a single time point, no temporal trend can be established despite the "stable" labels. No Critical detections and no novel candidates were reported.
+This report interprets metagenomic sequence signals from a single wastewater/environmental sample collected at **sapelo2** on **2025-12-02**, classified with GOTTCHA2. These are **detected sequence signals**, not confirmed infections or outbreaks. Two taxa were flagged High — *Severe acute respiratory syndrome-related coronavirus* (SARS-CoV-2-related; 52 reads) and *Norwalk virus* (norovirus; 26 reads) — both with adequate read support but each reported as "stable" from a single time point, which cannot establish a genuine trend. No Critical detections and no novel candidates were reported. Both High signals warrant orthogonal confirmation before any public-health interpretation.
 
 ## Risk Interpretation
 
-**Severe acute respiratory syndrome-related coronavirus (High, 52 reads)**
-A respiratory Betacoronavirus with documented faecal shedding; wastewater is an established early-warning signal. The 52-read support is above the weak-signal threshold but remains a modest signal from a single sample with one classifier. The "stable" trend is uninformative here as only one time point exists. Species/lineage-level claims cannot be made from these short reads.
+**Severe acute respiratory syndrome-related coronavirus — High (52 reads, "stable")**
+A respiratory Betacoronavirus with documented faecal shedding; wastewater surveillance is an established early-warning tool. Read support (52, ≥10) is adequate for a credible signal, but this remains a population-level sequence detection, not evidence of cases or transmission. Short reads cannot reliably resolve lineage/subtype. The "stable" label derives from one sample and is uninformative as a trend.
 
-**Norwalk virus / norovirus (High, 26 reads)**
-A leading cause of viral gastroenteritis, abundantly shed in stool and commonly detected in wastewater. 26 reads is adequate (>=10) but still a moderate signal warranting confirmation. Detection reflects population-level presence of viral genetic material, not case counts or severity.
+**Norwalk virus (norovirus) — High (26 reads, "stable")**
+A leading cause of viral gastroenteritis, abundantly shed in stool and commonly abundant in wastewater. Read support (26, ≥10) is adequate but modest. Detection reflects environmental presence of viral genetic material, not an outbreak. As above, no trend can be inferred from a single time point.
 
-*Note:* Medium-tier detections (Human mastadenovirus F, Betacoronavirus 1, Human coronavirus 229E) are consistent with common faecal/seasonal community circulation and are not on the high-risk list. Three phage taxa were identified and are excluded from pathogen risk assessment.
+*Context (Medium, not actioned here):* Human mastadenovirus F (116 reads), Betacoronavirus 1 (26 reads), and Human coronavirus 229E (20 reads) are common/seasonal human faecal or respiratory detections.
 
 ## Recommended Public-Health Actions
 
-- **Confirm SARS-CoV-2-related coronavirus** on the same extract with targeted RT-qPCR or amplicon sequencing before any action.
-- **Confirm Norwalk virus/norovirus** with targeted RT-qPCR or amplicon sequencing.
-- **Initiate repeat sampling** at sapelo2 across multiple time points to establish whether any genuine trend exists (single sample cannot).
-- **Verify with a second method/classifier**, given reliance on one tool (GOTTCHA2); assess coverage breadth, not read count alone.
-- **Integrate with clinical/syndromic surveillance** before drawing any public-health conclusions; do not treat these signals as diagnoses or outbreaks.
+- **Confirm SARS-CoV-2-related coronavirus (High)** on the same extract with targeted, validated RT-qPCR; follow with amplicon/targeted-capture sequencing for identity and, where possible, lineage.
+- **Confirm Norwalk virus (High)** with targeted RT-qPCR or amplicon sequencing before any interpretation.
+- **Initiate repeat sampling** at sapelo2 across multiple time points to establish whether any genuine trend exists; the current "stable" labels are not informative.
+- **Integrate with clinical/syndromic surveillance** before considering any public-health action.
+- Treat Medium-risk enteric/respiratory detections as routine context; no immediate action.
 
 ## Caveats & Limitations
 
-- Results are **population-level sequence signals**, not confirmed infections, case counts, or outbreaks.
-- **Single sample, single time point**: "stable" trends are not interpretable; no temporal inference possible.
-- **Single classifier (GOTTCHA2)** with no orthogonal confirmation yet performed.
-- Read counts are modest; confidence depends on coverage breadth/evenness, not reported here.
-- **8 taxa were flagged as potential false positives**; low-coverage k-mer/marker calls can mis-assign.
-- **Phages (n=3)** are environmental/faecal indicators, not pathogens.
-- Absence of a signal is not evidence of absence; database completeness bounds detection. No normalization (e.g. PMMoV) data provided to enable inter-sample comparison.
+- Single sample, single site, single date — **no temporal trend can be established**; "stable" is uninformative here.
+- Single classifier (GOTTCHA2); k-mer/marker calls can mis-assign at low coverage. Coverage breadth/evenness, not provided, is stronger evidence than read count.
+- 8 taxa were flagged as potential false positives; database completeness bounds detection (absence ≠ absence).
+- Strain/subtype claims from short reads are unreliable.
+- 3 bacteriophage taxa are environmental/faecal indicators, **not human pathogens**, and are reported separately.
+- These signals are not clinical diagnoses and do not confirm any outbreak.
 
 ## 9. Human Review
 
@@ -149,7 +149,7 @@ A leading cause of viral gastroenteritis, abundantly shed in stool and commonly 
 - **MetaMAVS version:** 0.1.0
 - **Config:** configs/sapelo2_config.yaml
 - **Run directory:** reports/sapelo2_genome72
-- **Generated (UTC):** 2026-06-09T00:52:36Z
+- **Generated (UTC):** 2026-06-09T14:02:21Z
 
 
 ---
