@@ -109,7 +109,7 @@ fall back to deterministic logic:
 | `taxonomy_agent` | phage / pathogen / false-positive classification (NCBI-grounded) |
 | `abundance_agent` | epidemiological trend interpretation |
 | `novel_virus_agent` | novel/divergent candidate assessment |
-| `risk_assessment_agent` | per-taxon risk + reasoning (NCBI-grounded) |
+| `risk_assessment_agent` | per-taxon risk + reasoning (NCBI lineage fed to the LLM as evidence; inherits the NCBI-set phage flag) |
 | `llm_interpretation` | public-health surveillance narrative |
 
 Four guarantees for every LLM agent:

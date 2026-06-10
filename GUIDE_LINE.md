@@ -210,7 +210,7 @@ START
   → taxonomy_agent           (8) 分类清洗 + 噬菌体/假阳性(LLM + NCBI 谱系)
   → abundance_agent          (9) RPM 归一化 + 趋势(LLM 趋势解读)
   → novel_virus_agent        (10) 组装/筛查 + 新型候选(LLM 评估)
-  → risk_assessment_agent    (11) 四级风险评级 + 理由(LLM + NCBI)
+  → risk_assessment_agent    (11) 四级风险评级 + 理由(LLM;NCBI 谱系经证据接地)
   → [conditional_review_router]
         ├─ human_review       (12) 人在回路:auto / interactive / pause 暂停恢复
         │     └─ pause → END(之后用 `metamavs review` 恢复)
@@ -239,7 +239,7 @@ START
 | 8 | taxonomy_agent | 🧠 | 归一分类;LLM 判 噬菌体/病原/假阳性,**基于 NCBI 真实谱系 grounding** |
 | 9 | abundance_agent | 🧠 | RPM 归一化+趋势;LLM 做流行病学趋势解读 |
 | 10 | novel_virus_agent | 🧠 | 组装+筛查命令;LLM 评估新型/分歧候选 |
-| 11 | risk_assessment_agent | 🧠 | 逐 taxon 评 Low/Medium/High/Critical;LLM 推理+NCBI 谱系,在安全护栏内 |
+| 11 | risk_assessment_agent | 🧠 | 逐 taxon 评 Low/Medium/High/Critical;LLM 推理(NCBI 谱系作证据接地)+ 继承上游 NCBI 噬菌体标记,在安全护栏内 |
 | 12 | human_review | | HITL 检查点(auto / interactive / **pause 暂停恢复**)|
 | 13 | llm_interpretation | 🧠 | 为报告生成公共卫生监测叙事 |
 | 14 | report_writer_agent | | 生成 Markdown + HTML 监测报告 |

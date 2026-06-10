@@ -267,7 +267,7 @@ START
   → taxonomy_agent           (8) taxonomy cleanup + phage/FP (LLM + NCBI lineage)
   → abundance_agent          (9) RPM normalization + trends (LLM interpretation)
   → novel_virus_agent        (10) assembly/screening + novel candidates (LLM)
-  → risk_assessment_agent    (11) Low/Medium/High/Critical + reasons (LLM + NCBI)
+  → risk_assessment_agent    (11) Low/Medium/High/Critical + reasons (LLM; NCBI lineage via evidence)
   → [conditional_review_router]
         ├─ human_review       (12) HITL: auto / interactive / pause-and-resume
         │     └─ pause → END (resume later via `metamavs review`)
@@ -297,7 +297,7 @@ fallback otherwise). `(hpc)` marks remote nodes traversed only when
 | 8 | taxonomy_agent | 🧠 | Normalize taxonomy; LLM classifies phage/pathogen/false-positive, **grounded in NCBI lineage** |
 | 9 | abundance_agent | 🧠 | RPM normalization + trends; LLM epidemiological trend interpretation |
 | 10 | novel_virus_agent | 🧠 | Assembly + screening commands; LLM assesses novel/divergent candidates |
-| 11 | risk_assessment_agent | 🧠 | Low/Medium/High/Critical per taxon; LLM reasoning + NCBI lineage, within safety rails |
+| 11 | risk_assessment_agent | 🧠 | Low/Medium/High/Critical per taxon; LLM reasoning grounded in NCBI lineage (fed as evidence) + the inherited NCBI phage flag, within safety rails |
 | 12 | human_review | | HITL checkpoint (auto / interactive / **pause-and-resume**) |
 | 13 | llm_interpretation | 🧠 | Public-health surveillance narrative for the report |
 | 14 | report_writer_agent | | Generate Markdown + HTML surveillance report |
