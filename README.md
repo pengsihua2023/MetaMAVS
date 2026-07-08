@@ -100,8 +100,10 @@ reports/<run_name>/
 
 ## LLM agents (optional, Phase 4)
 
-Six nodes are **real LLM agents** (Anthropic Claude) when enabled; otherwise they
-fall back to deterministic logic:
+Six nodes are **real LLM agents** when enabled; otherwise they fall back to
+deterministic logic. The backend is pluggable — a **local Gemma 4 E2B** server
+(default, no API key) or **Anthropic Claude** — selected by the `LLM_BACKEND`
+environment variable (see [LLM backend](#llm-backend-gemma--claude) below):
 
 | Node | LLM role |
 |---|---|
@@ -125,16 +127,58 @@ Four guarantees for every LLM agent:
 4. **Prompt caching** — the shared reference is the cached system-prompt prefix
    (cross-agent cache hits within a run).
 
-Enable it:
+Enable it (default = local Gemma, no key needed):
 
 ```bash
-echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env       # .env is gitignored
+export LLM_BACKEND=gemma                          # default; local llama-server
 ```
 ```yaml
 # in your config
-llm:  { enabled: true, model: claude-opus-4-8, effort: medium }
+llm:  { enabled: true, effort: medium }           # model string is a no-op under gemma
 ncbi: { enabled: true, email: you@example.com }   # verified NCBI lineage grounding
 ```
+
+### LLM backend (Gemma / Claude)
+
+`LLM_BACKEND` selects where LLM agents run. Both share the same
+`generate()`/`generate_json()` interface, so no agent code changes between them.
+
+**Gemma 4 E2B (default, local, key-free):**
+
+```bash
+export LLM_BACKEND=gemma
+metamavs run --config configs/example_config.yaml
+```
+
+Requires a local OpenAI-compatible `llama-server` on `http://localhost:8080/v1`
+started with `--jinja`, e.g.:
+
+```bash
+./build/bin/llama-server -hf ggml-org/gemma-4-E2B-it-GGUF:Q8_0 \
+    --host 127.0.0.1 --port 8080 --jinja
+```
+
+Optional overrides: `GEMMA_BASE_URL`, `GEMMA_MODEL`, `GEMMA_API_KEY`.
+
+**Claude (Anthropic API):**
+
+```bash
+export LLM_BACKEND=claude
+echo 'ANTHROPIC_API_KEY=sk-ant-...' > .env         # .env is gitignored
+metamavs run --config configs/example_config.yaml
+```
+
+Migration notes:
+
+- Gemma 4 E2B is a small **reasoning** model — it spends output tokens on hidden
+  reasoning before the visible answer, so `max_tokens` has a floor (2048) to keep
+  content non-empty; keep `llm.max_tokens` ≥ 4000 for narrative agents.
+- Tool-call / long-context robustness is below Claude (32K–131K context); verify
+  output quality on complex nodes.
+- Under `gemma`, `llm.model` and per-agent model overrides are no-ops (the server
+  serves one model); reports attribute output to the real served model.
+- If quality is insufficient, switch back with `LLM_BACKEND=claude` — no code
+  change, fully reversible.
 
 **Per-agent model overrides (optional).** All six agents share `llm.model` /
 `effort` / `max_tokens` by default. To run, say, risk assessment on a stronger

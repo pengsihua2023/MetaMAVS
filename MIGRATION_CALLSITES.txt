@@ -1,0 +1,45 @@
+# MetaMAVS LLM Call-Site Inventory (Task 0.2)
+# Generated for: Claude/Anthropic -> local Gemma 4 E2B migration
+# Convention: file:line:category:note
+
+## Category summary
+# - The project does NOT use LangChain ChatAnthropic. It uses the OFFICIAL
+#   Anthropic SDK (`import anthropic`), fully centralized in ONE module:
+#   metamavs/llm/client.py. All six LLM agents call it only through the
+#   generate()/generate_json()/llm_available()/resolve_params() interface.
+# - Migration therefore touches exactly ONE code file (client.py). Every agent
+#   is unchanged. Config/docs are updated separately.
+
+## PRIMARY CODE CALL-SITE (the only place the SDK is constructed/called)
+metamavs/llm/client.py:20 : model-const   : DEFAULT_MODEL = "claude-opus-4-8"
+metamavs/llm/client.py:58 : sdk           : os.environ.get("ANTHROPIC_API_KEY") gate
+metamavs/llm/client.py:61 : sdk           : import anthropic (availability check)
+metamavs/llm/client.py:90 : sdk           : import anthropic
+metamavs/llm/client.py:92 : sdk           : client = anthropic.Anthropic()
+metamavs/llm/client.py:110: sdk           : client.messages.create(**kwargs)  (Anthropic-shaped: system blocks, thinking, output_config)
+metamavs/llm/client.py:111: sdk           : resp.content iteration (Anthropic response shape)
+metamavs/llm/client.py:112: sdk           : resp.usage.cache_read_input_tokens (Anthropic usage)
+
+## INTERFACE CONSUMERS (agents) — NO CHANGE NEEDED, call through client.py only
+metamavs/agents/qc_agent.py:10,23,28            : consumer : generate + llm_available + resolve_params("qc")
+metamavs/agents/taxonomy_agent.py:11,41,43      : consumer : generate_json + llm_available + resolve_params("taxonomy")
+metamavs/agents/abundance_agent.py:10,133,135   : consumer : generate + llm_available + resolve_params("abundance")
+metamavs/agents/novel_virus_agent.py:10,139,140 : consumer : generate_json + llm_available + resolve_params("novel_virus")
+metamavs/agents/risk_assessment_agent.py:10,48,50: consumer: generate_json + llm_available + resolve_params("risk_assessment")
+metamavs/agents/llm_interpretation_agent.py:14,35,41,43 : consumer : generate + llm_available + resolve_params("llm_interpretation")
+metamavs/llm/__init__.py:9,11                    : re-export: generate, generate_json, llm_available, resolve_params
+
+## CONFIG / MODEL STRINGS (updated in Task 2.3; no-op under gemma backend)
+metamavs/config.py:172                : LLMConfig.model default = "claude-opus-4-8"
+configs/sapelo2_config.yaml:47,53-56  : llm.model / overrides = claude-* (ignored when LLM_BACKEND=gemma)
+
+## PACKAGING
+pyproject.toml:25,26  : optional-deps 'llm'/'dev' = anthropic>=0.40 (kept; openai added)
+
+## DOCS (informational; updated in Task 4.1)
+README.md, GUIDE_LINE.md, GUIDE_LINE_EN.md, fasta_run.md, MIGRATE_TO_LOCAL_GEMMA.md, README-baoliu.md
+
+## OFFICIAL-SDK vs LANGCHAIN verdict
+# => Situation B (official Anthropic SDK). No LangChain ChatAnthropic present.
+# => Cleanest migration: add an OpenAI-compatible backend INSIDE client.py,
+#    behind LLM_BACKEND, using the `openai` SDK (direct analog of `anthropic`).

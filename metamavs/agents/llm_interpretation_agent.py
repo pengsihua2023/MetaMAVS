@@ -11,7 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ..llm import generate, llm_available, resolve_params
+from ..llm import active_model, generate, llm_available, resolve_params
 from ..llm.prompts import SYSTEM_PROMPT, build_user_prompt
 from ..llm.reference import SHARED_REFERENCE
 from ..state import MetaMAVSState
@@ -33,7 +33,9 @@ def llm_interpretation_agent_node(state: MetaMAVSState) -> dict[str, Any]:
                 "execution_log": ["llm_interpretation: disabled"]}
 
     if not llm_available():
-        warn = "LLM interpretation enabled but no ANTHROPIC_API_KEY/SDK — using deterministic report only"
+        warn = ("LLM interpretation enabled but backend unavailable "
+                "(missing SDK, no ANTHROPIC_API_KEY, or local server unreachable) "
+                "— using deterministic report only")
         logger.warning(warn)
         return {"llm_narrative": {"enabled": True, "status": "no_key"},
                 "warnings": [warn], "execution_log": ["llm_interpretation: no key"]}
@@ -58,7 +60,7 @@ def llm_interpretation_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     logger.info("LLM narrative written: %s", md_path)
     return {
         "llm_narrative": {"enabled": True, "status": "ok",
-                          "model": params["model"],
+                          "model": active_model(params["model"]),
                           "text": narrative, "path": str(md_path)},
         "execution_log": ["llm_interpretation: narrative generated"],
     }
