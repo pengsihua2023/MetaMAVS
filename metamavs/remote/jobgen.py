@@ -20,6 +20,23 @@ from ..utils.file_utils import write_text
 from .types import RemoteJobSpec, ResourceSpec
 
 
+def _fastqc_base(read_path: str) -> str:
+    """FastQC's output prefix for an input read file.
+
+    FastQC strips a trailing ``.gz`` then a known sequence extension and appends
+    ``_fastqc`` (e.g. ``sample_72_0_01.fq.gz`` -> ``sample_72_0_01_fastqc``).
+    """
+
+    name = Path(read_path).name
+    if name.endswith(".gz"):
+        name = name[:-3]
+    for ext in (".fastq", ".fq", ".fasta", ".fa", ".bam", ".sam"):
+        if name.endswith(ext):
+            name = name[: -len(ext)]
+            break
+    return f"{name}_fastqc"
+
+
 def _samples(state: dict) -> list[dict[str, Any]]:
     path = state.get("validated_manifest_path")
     if not path or not Path(path).exists():
@@ -107,7 +124,14 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
         out, cmds = [], [f"mkdir -p {rrun}/results/qc"]
         for s in samples:
             sid = s["sample_id"]
-            cmds.append(f"fastqc -t {threads} -o {rrun}/results/qc {s.get('read1','')} {s.get('read2','')}".strip())
+            r1, r2 = s.get("read1", ""), s.get("read2", "")
+            # FastQC writes <readbase>_fastqc.zip / .html (NOT a bare fastqc_data.txt);
+            # with --extract it also writes <readbase>_fastqc/fastqc_data.txt. Copy that
+            # to {sid}.fastqc_data.txt so the parser (which derives sample id from the
+            # filename before the first '.') picks up the real metrics.
+            cmds.append(f"fastqc --extract -t {threads} -o {rrun}/results/qc {r1} {r2}".strip())
+            cmds.append(f"cp {rrun}/results/qc/{_fastqc_base(r1)}/fastqc_data.txt "
+                        f"{rrun}/results/qc/{sid}.fastqc_data.txt")
             out.append(f"{rrun}/results/qc/{sid}.fastqc_data.txt")
         add("qc", "qc", cmds, out, [])
 
