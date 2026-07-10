@@ -1,0 +1,549 @@
+{
+  "config": {
+    "project": {
+      "name": "MetaMAVS",
+      "run_name": "sapelo2_genome72",
+      "output_dir": "reports/sapelo2_genome72"
+    },
+    "input": {
+      "manifest": "data/sapelo2_manifest.csv",
+      "sequencing_type": "paired_end",
+      "remote_data": true
+    },
+    "execution": {
+      "dry_run": false,
+      "mode": "hpc",
+      "threads": 8,
+      "retries": 0
+    },
+    "tools": {
+      "qc": {
+        "fastqc": false,
+        "fastp": false,
+        "multiqc": false
+      },
+      "host_removal": {
+        "tool": "minimap2",
+        "host_reference": ""
+      },
+      "viral_detection": {
+        "tools": [
+          "gottcha2"
+        ],
+        "kraken2_db": null,
+        "diamond_db": null,
+        "gottcha2_db": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species.fna",
+        "gottcha2_level": "species"
+      },
+      "assembly": {
+        "enabled": false,
+        "assembler": "megahit"
+      },
+      "novel_virus_screening": {
+        "enabled": false,
+        "tools": [
+          "checkv"
+        ]
+      }
+    },
+    "risk": {
+      "high_risk_pathogens": [
+        "SARS-CoV-2",
+        "Influenza A virus",
+        "Influenza B virus",
+        "Norovirus",
+        "Enterovirus"
+      ],
+      "review_on_high_risk": true,
+      "review_on_novel_candidates": true,
+      "review_on_qc_failure": true
+    },
+    "report": {
+      "formats": [
+        "markdown",
+        "html"
+      ]
+    },
+    "human_review": {
+      "mode": "pause"
+    },
+    "slurm": {
+      "partition": "batch",
+      "time": "24:00:00",
+      "mem": "32G",
+      "cpus_per_task": 8,
+      "modules": [],
+      "conda_env": null
+    },
+    "hpc": {
+      "backend": "ssh",
+      "host": "sapelo2.gacrc.uga.edu",
+      "user": "sp96859",
+      "remote_base": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS",
+      "partition": "bahl_p",
+      "cpus": 8,
+      "mem": "32G",
+      "time": "24:00:00",
+      "step_resources": {
+        "gottcha2": {
+          "mem": "120G",
+          "cpus": 16,
+          "time": "12:00:00"
+        }
+      },
+      "conda_env": null,
+      "modules": [],
+      "env_setup": [],
+      "steps": [
+        "gottcha2"
+      ],
+      "step_env": {
+        "gottcha2": [
+          "export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"
+        ],
+        "kraken2": [
+          "export PATH=/home/sp96859/.conda/envs/kraken2_env/bin:$PATH"
+        ],
+        "host_removal": [
+          "export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"
+        ],
+        "novel_virus": [
+          "export PATH=/home/sp96859/.conda/envs/megahit_env/bin:$PATH"
+        ]
+      },
+      "retries": 3,
+      "poll_interval_s": 60,
+      "max_wait_s": 86400,
+      "ssh_control": true,
+      "ssh_control_path": "~/.ssh/mm-sapelo2",
+      "ssh_control_persist": "8h",
+      "ssh_opts": [],
+      "mock_fixtures_dir": null,
+      "mock_fail_jobs": []
+    },
+    "llm": {
+      "enabled": true,
+      "model": "claude-opus-4-8",
+      "effort": "medium",
+      "max_tokens": 4000,
+      "overrides": {}
+    },
+    "ncbi": {
+      "enabled": true,
+      "api_key": null,
+      "email": "pengsihua99@gmail.com",
+      "timeout_s": 15
+    },
+    "_config_path": "configs/sapelo2_config.yaml"
+  },
+  "run_id": "run_20260710_142845",
+  "run_dir": "reports/sapelo2_genome72",
+  "dry_run": false,
+  "manifest_path": "data/sapelo2_manifest.csv",
+  "validated_manifest_path": "reports/sapelo2_genome72/intermediate/validated_manifest.csv",
+  "sample_summary": {
+    "n_samples": 1,
+    "sequencing_type": "paired_end",
+    "locations": [
+      "sapelo2"
+    ],
+    "collection_dates": [
+      "2025-12-02"
+    ],
+    "columns": [
+      "sample_id",
+      "read1",
+      "read2",
+      "collection_date",
+      "location",
+      "sample_type"
+    ]
+  },
+  "input_summary": {
+    "summary_path": "reports/sapelo2_genome72/intermediate/input_summary.json",
+    "n_samples": 1,
+    "sequencing_type": "paired_end",
+    "locations": [
+      "sapelo2"
+    ],
+    "collection_dates": [
+      "2025-12-02"
+    ],
+    "columns": [
+      "sample_id",
+      "read1",
+      "read2",
+      "collection_date",
+      "location",
+      "sample_type"
+    ]
+  },
+  "qc_commands": [],
+  "qc_summary_path": "reports/sapelo2_genome72/intermediate/qc_summary.json",
+  "qc_summary": {
+    "commands_path": "reports/sapelo2_genome72/commands/01_qc.sh",
+    "exec_mode": "remote_deferred",
+    "n_samples": 1,
+    "n_pass": 1,
+    "n_fail": 0,
+    "thresholds": {
+      "min_mean_quality": 25.0,
+      "min_reads": 100000
+    },
+    "per_sample": [
+      {
+        "sample_id": "Genome_72",
+        "mean_quality": 36.0,
+        "total_reads": 1500000,
+        "adapter_pct": 2.0,
+        "mean_read_length": 150,
+        "qc_status": "pass"
+      }
+    ],
+    "note": "Metrics are synthetic placeholders in dry-run mode."
+  },
+  "qc_pass_fail": {
+    "Genome_72": "pass"
+  },
+  "host_removal_commands": [
+    "minimap2 -ax sr -t 8 /path/to/host/reference /scratch/sp96859/Meta-genome-data-analysis/Apptainer/data/short_reads/sample_72_0_01.fq.gz /scratch/sp96859/Meta-genome-data-analysis/Apptainer/data/short_reads/sample_72_0_02.fq.gz | samtools view -bS -f 4 - > reports/sapelo2_genome72/intermediate/host_removed/Genome_72.host.bam"
+  ],
+  "host_removal_summary_path": "reports/sapelo2_genome72/intermediate/host_removal_summary.json",
+  "host_removal_summary": {
+    "commands_path": "reports/sapelo2_genome72/commands/02_host_removal.sh",
+    "tool": "minimap2",
+    "host_reference": "/path/to/host/reference",
+    "n_samples": 1,
+    "per_sample": [
+      {
+        "sample_id": "Genome_72",
+        "host_read_pct": 85.0,
+        "non_host_reads": 300000,
+        "tool": "minimap2"
+      }
+    ],
+    "exec_mode": "remote_deferred",
+    "note": "Host fractions are synthetic placeholders in dry-run mode."
+  },
+  "non_host_fastq_paths": {
+    "Genome_72": [
+      "reports/sapelo2_genome72/intermediate/host_removed/Genome_72_nonhost_R1.fastq.gz",
+      "reports/sapelo2_genome72/intermediate/host_removed/Genome_72_nonhost_R2.fastq.gz"
+    ]
+  },
+  "viral_detection_commands": [],
+  "raw_viral_hits_path": "reports/sapelo2_genome72/tables/raw_viral_hits.csv",
+  "candidate_viral_taxa_path": "reports/sapelo2_genome72/tables/candidate_viral_taxa.csv",
+  "viral_detection_summary": {
+    "tools": [
+      "gottcha2"
+    ],
+    "exec_mode": "hpc",
+    "n_raw_hits": 20,
+    "n_candidate_taxa": 20,
+    "note": "Parsed from real Kraken2/Bracken/GOTTCHA2 output."
+  },
+  "cleaned_taxonomy_table_path": "reports/sapelo2_genome72/tables/cleaned_taxonomy_table.csv",
+  "false_positive_flags_path": "reports/sapelo2_genome72/tables/false_positive_flags.csv",
+  "taxonomy_summary": {
+    "n_taxa": 20,
+    "n_flagged": 8,
+    "n_phage": 3,
+    "n_control": 1,
+    "n_pathogen_like": 8,
+    "families": [
+      "Picornaviridae",
+      "unclassified"
+    ],
+    "mode": "llm+ncbi"
+  },
+  "abundance_table_path": "reports/sapelo2_genome72/tables/abundance_table.csv",
+  "trend_summary_path": "reports/sapelo2_genome72/tables/trend_summary.csv",
+  "plot_specs_path": "reports/sapelo2_genome72/intermediate/plot_specs.json",
+  "trend_summary": {
+    "n_taxa": 20,
+    "increasing": [],
+    "sharp_increase": [],
+    "top_by_mean_rpm": [
+      {
+        "taxon_name": "Obolenskvirus AP22",
+        "first_rpm": 120.67,
+        "last_rpm": 120.67,
+        "pct_change": 0.0,
+        "trend": "stable",
+        "mean_rpm": 120.67
+      },
+      {
+        "taxon_name": "Phikzvirus phiKZ",
+        "first_rpm": 103.33,
+        "last_rpm": 103.33,
+        "pct_change": 0.0,
+        "trend": "stable",
+        "mean_rpm": 103.33
+      },
+      {
+        "taxon_name": "Human mastadenovirus F",
+        "first_rpm": 77.33,
+        "last_rpm": 77.33,
+        "pct_change": 0.0,
+        "trend": "stable",
+        "mean_rpm": 77.33
+      },
+      {
+        "taxon_name": "Pepper mild mottle virus",
+        "first_rpm": 44.0,
+        "last_rpm": 44.0,
+        "pct_change": 0.0,
+        "trend": "stable",
+        "mean_rpm": 44.0
+      },
+      {
+        "taxon_name": "Severe acute respiratory syndrome-related coronavirus",
+        "first_rpm": 34.67,
+        "last_rpm": 34.67,
+        "pct_change": 0.0,
+        "trend": "stable",
+        "mean_rpm": 34.67
+      }
+    ],
+    "llm_interpretation": "This analysis is based on a single sample point, meaning no temporal trend or change can be established. All detected viral abundances are currently reported as \"stable,\" reflecting the environmental load at this specific time, not an epidemiological trend.\n\nWhile several taxa, including SARS-CoV-2 and Norovirus indicators (implied by the presence of other enteric viruses), are detected, the lack of change prevents any conclusion regarding an outbreak or increasing transmission.\n\n**Recommendation:** To establish a genuine trend and assess environmental load changes, repeat sampling across multiple time points is essential. Orthogonal confirmation (e.g., targeted RT-qPCR) should be performed on any signal of interest before any public health action is considered.",
+    "mode": "llm"
+  },
+  "assembly_commands": [],
+  "novel_virus_commands": [],
+  "novel_candidate_table_path": "reports/sapelo2_genome72/tables/novel_candidate_table.csv",
+  "novel_candidate_summary": {
+    "assembly_commands_path": "reports/sapelo2_genome72/commands/04_assembly.sh",
+    "screening_commands_path": "reports/sapelo2_genome72/commands/05_novel_virus.sh",
+    "n_candidates": 0,
+    "assembler": "megahit",
+    "screening_tools": [
+      "checkv"
+    ],
+    "candidates": [],
+    "exec_mode": "remote_deferred",
+    "llm_assessment": null,
+    "mode": "deterministic",
+    "note": "Candidates derived from synthetic taxonomy in dry-run mode."
+  },
+  "risk_table_path": "reports/sapelo2_genome72/tables/risk_table.csv",
+  "risk_summary": {
+    "overall_risk": "High",
+    "counts": {
+      "Low": 11,
+      "Medium": 6,
+      "High": 2,
+      "Critical": 0
+    },
+    "top_risks": [
+      {
+        "taxon_name": "Severe acute respiratory syndrome-related coronavirus",
+        "risk_level": "High",
+        "total_reads": 52,
+        "trend": "stable",
+        "reasons": "[LLM] Matches the high-risk pathogen list (Betacoronavirus) and has adequate read support (52 reads), indicating an established early-warning signal."
+      },
+      {
+        "taxon_name": "Norwalk virus",
+        "risk_level": "High",
+        "total_reads": 26,
+        "trend": "stable",
+        "reasons": "[LLM] Matches the high-risk pathogen list (Norovirus) and has substantial read support (26 reads), indicating a significant enteric viral signal."
+      },
+      {
+        "taxon_name": "Human mastadenovirus F",
+        "risk_level": "Medium",
+        "total_reads": 116,
+        "trend": "stable",
+        "reasons": "[LLM] Non-phage, non-pathogen virus detected with substantial read support (116 reads), warranting a Medium risk assessment."
+      },
+      {
+        "taxon_name": "Betacoronavirus 1",
+        "risk_level": "Medium",
+        "total_reads": 26,
+        "trend": "stable",
+        "reasons": "[LLM] Non-phage, non-pathogen virus detected with substantial read support (26 reads), warranting a Medium risk assessment."
+      },
+      {
+        "taxon_name": "Human coronavirus 229E",
+        "risk_level": "Medium",
+        "total_reads": 20,
+        "trend": "stable",
+        "reasons": "[LLM] Non-phage virus detected with substantial read support (20 reads), warranting a Medium risk assessment."
+      }
+    ],
+    "n_novel_candidates": 0,
+    "controls": [
+      {
+        "taxon_name": "Pepper mild mottle virus",
+        "total_reads": 66,
+        "role": "Pepper mild mottle virus (PMMoV)"
+      }
+    ],
+    "mode": "llm"
+  },
+  "recommended_followup_actions": [
+    "Confirm Severe acute respiratory syndrome-related coronavirus (High) with targeted RT-qPCR / amplicon sequencing",
+    "Confirm Norwalk virus (High) with targeted RT-qPCR / amplicon sequencing"
+  ],
+  "review_required": true,
+  "review_decision": "awaiting_human_review",
+  "reviewer_notes": null,
+  "approved_for_report": false,
+  "awaiting_review": true,
+  "review_request_path": "reports/sapelo2_genome72/review_request.json",
+  "llm_narrative": {},
+  "markdown_report_path": null,
+  "html_report_path": null,
+  "tool_availability": {},
+  "execution_reports": [
+    {
+      "step": "qc",
+      "n_commands": 0,
+      "mode": "remote_deferred",
+      "fell_back": true,
+      "tools": {},
+      "n_ok": 0,
+      "n_failed": 0,
+      "outputs_ok": null
+    },
+    {
+      "step": "host_removal",
+      "n_commands": 1,
+      "mode": "remote_deferred",
+      "fell_back": true,
+      "tools": {},
+      "n_ok": 0,
+      "n_failed": 0,
+      "outputs_ok": null
+    },
+    {
+      "step": "viral_detection",
+      "n_commands": 0,
+      "mode": "remote_deferred",
+      "fell_back": true,
+      "tools": {},
+      "n_ok": 0,
+      "n_failed": 0,
+      "outputs_ok": null
+    },
+    {
+      "step": "remote_execution",
+      "mode": "hpc",
+      "n_jobs": 1,
+      "failed": []
+    },
+    {
+      "step": "novel_virus",
+      "n_commands": 0,
+      "mode": "remote_deferred",
+      "fell_back": true,
+      "tools": {},
+      "n_ok": 0,
+      "n_failed": 0,
+      "outputs_ok": null
+    }
+  ],
+  "remote_job_specs": [
+    {
+      "job_name": "gottcha2",
+      "step": "gottcha2",
+      "sample_id": null,
+      "script_local": "reports/sapelo2_genome72/remote/scripts/gottcha2.sh",
+      "script_remote": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/scripts/gottcha2.sh",
+      "payload": [
+        "mkdir -p /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/work",
+        "gottcha2.py -i /scratch/sp96859/Meta-genome-data-analysis/Apptainer/data/short_reads/sample_72_0_01.fq.gz /scratch/sp96859/Meta-genome-data-analysis/Apptainer/data/short_reads/sample_72_0_02.fq.gz -d /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species.fna -l species -t 8 -o /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/work/Genome_72.gottcha2 -p Genome_72",
+        "cp /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/work/Genome_72.gottcha2/Genome_72.tsv /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection/Genome_72.gottcha2.tsv",
+        "cp /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/work/Genome_72.gottcha2/Genome_72.lineage.tsv /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection/Genome_72.gottcha2.lineage.tsv"
+      ],
+      "input_files": [],
+      "output_files": [
+        "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection/Genome_72.gottcha2.tsv",
+        "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection/Genome_72.gottcha2.lineage.tsv"
+      ],
+      "depends_on": [],
+      "resources": {
+        "partition": "bahl_p",
+        "cpus": 16,
+        "mem": "120G",
+        "time": "12:00:00"
+      },
+      "modules": [],
+      "conda_env": null,
+      "env_setup": [
+        "export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"
+      ]
+    }
+  ],
+  "remote_execution_result": {
+    "run_id": "run_20260710_142845",
+    "remote_base": "",
+    "jobs": [
+      {
+        "job_name": "gottcha2",
+        "job_id": "46913067",
+        "state": "COMPLETED",
+        "exit_code": "0:0",
+        "submit_time": null,
+        "end_time": null,
+        "raw": "46913067|gottcha2|COMPLETED|0:0"
+      }
+    ],
+    "all_ok": true,
+    "failed": []
+  },
+  "synced_manifest": {
+    "run_id": "run_20260710_142845",
+    "downloaded": [
+      {
+        "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection/Genome_72.gottcha2.tsv",
+        "local_path": "reports/sapelo2_genome72/results/raw/gottcha2/Genome_72.gottcha2.tsv",
+        "size": 70010,
+        "ok": true
+      },
+      {
+        "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_142845/results/viral_detection/Genome_72.gottcha2.lineage.tsv",
+        "local_path": "reports/sapelo2_genome72/results/raw/gottcha2/Genome_72.gottcha2.lineage.tsv",
+        "size": 12235,
+        "ok": true
+      }
+    ],
+    "missing": [],
+    "complete": true
+  },
+  "parse_results": [
+    {
+      "tool": "gottcha2",
+      "sample_id": "Genome_72",
+      "parsed_table_path": "reports/sapelo2_genome72/results/raw/gottcha2/Genome_72.gottcha2.tsv",
+      "n_records": 20,
+      "ok": true,
+      "schema_version": "1",
+      "warnings": []
+    }
+  ],
+  "warnings": [
+    "No host_reference configured; using placeholder path in generated commands",
+    "8 taxon(a) flagged as likely false positives / phage / low-confidence"
+  ],
+  "errors": [],
+  "execution_log": [
+    "input_manager: validated 1 sample(s)",
+    "qc_agent: 0 command(s), exec=remote_deferred",
+    "host_removal_agent: 1 command(s) (minimap2), exec=remote_deferred",
+    "viral_detection_agent: 7 candidate taxa, exec=remote_deferred",
+    "remote_execution: 1 job(s), all_ok=True",
+    "result_sync: 2 file(s), complete=True",
+    "tool_output_parser: parsed 1 file(s), 20 hits",
+    "taxonomy_agent: 20 taxa, 8 flagged (mode=llm+ncbi)",
+    "abundance_agent: 20 taxa trend-analysed",
+    "novel_virus_agent: 0 candidate(s), exec=remote_deferred",
+    "risk_assessment_agent: overall=High, review=True (mode=llm)",
+    "human_review: PAUSED awaiting human decision"
+  ],
+  "workflow_status": "running",
+  "can_continue": true,
+  "error_summary": {},
+  "final_summary": {}
+}
