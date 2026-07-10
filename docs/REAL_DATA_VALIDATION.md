@@ -147,3 +147,7 @@ run specifics (site, collection date, single-time-point caveat) and gave slightl
 richer per-taxon reasoning; Gemma was correct and cautious but more general —
 consistent with the migration comparison. This confirms Gemma is a viable local
 default on real data, with Claude available for cases needing extra nuance.
+
+A full side-by-side of the two **final reports** on this real run (excerpts,
+per-taxon reasoning, caveats) is in
+[`GEMMA_VS_CLAUDE_REAL_REPORT.md`](GEMMA_VS_CLAUDE_REAL_REPORT.md).
