@@ -5,8 +5,8 @@
 # >>> FILL the two TODO paths before --execute. <<<
 project:
   name: MetaMAVS
-  run_name: sapelo2_genome72
-  output_dir: reports/sapelo2_genome72
+  run_name: sapelo2_genome72_full
+  output_dir: reports/sapelo2_genome72_full
 
 input:
   manifest: data/sapelo2_manifest.csv
