@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>MetaMAVS — run_20260609_134738</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.5}
+h1,h2,h3{color:#0b3d66}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+th{background:#f0f4f8}
+code{background:#f3f3f3;padding:1px 4px;border-radius:3px}
+hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}
+</style>
+</head>
+<body>
+<h1>MetaMAVS Surveillance Report: sapelo2_genome72</h1>
+<p>&gt; _Research-grade metagenomic virus surveillance. Signals below are <strong>detected sequence signals</strong>, not confirmed infections. Confirmatory testing is required before any public-health action._</p>
+<h2>1. Project Summary</h2>
+<ul>
+<li><strong>Project:</strong> MetaMAVS</li>
+<li><strong>Run name:</strong> sapelo2_genome72</li>
+<li><strong>Run id:</strong> run_20260609_134738</li>
+<li><strong>Mode:</strong> execution</li>
+<li><strong>Overall risk:</strong> High</li>
+</ul>
+<h2>2. Sample Summary</h2>
+<ul>
+<li><strong>Number of samples:</strong> 1</li>
+<li><strong>Sequencing type:</strong> paired_end</li>
+<li><strong>Locations:</strong> sapelo2</li>
+<li><strong>Collection dates:</strong> 2025-12-02</li>
+</ul>
+<h2>3. Quality Control</h2>
+<ul>
+<li><strong>Passed:</strong> 1</li>
+<li><strong>Failed:</strong> 0</li>
+</ul>
+<table><thead><tr>
+<th>Sample</th>
+<th>Mean Q</th>
+<th>Total reads</th>
+<th>Adapter %</th>
+<th>QC</th>
+</tr></thead><tbody>
+<tr><td>Genome_72</td><td>36.0</td><td>1500000</td><td>2.0</td><td>pass</td></tr>
+</tbody></table>
+<h2>4. Host Read Removal</h2>
+<ul>
+<li><strong>Tool:</strong> minimap2</li>
+<li><strong>Host reference:</strong> /path/to/host/reference</li>
+</ul>
+<table><thead><tr>
+<th>Sample</th>
+<th>Host read %</th>
+<th>Non-host reads</th>
+</tr></thead><tbody>
+<tr><td>Genome_72</td><td>85.0</td><td>300000</td></tr>
+</tbody></table>
+<h2>5. Viral Detection &amp; Taxonomy</h2>
+<ul>
+<li><strong>Detection tools:</strong> gottcha2</li>
+<li><strong>Candidate taxa:</strong> 20</li>
+<li><strong>Flagged (phage/FP/low-conf):</strong> 8</li>
+<li><strong>Phage taxa:</strong> 3</li>
+<li><strong>Pathogen-like taxa:</strong> 8</li>
+</ul>
+<h2>6. Abundance Trends</h2>
+<table><thead><tr>
+<th>Taxon</th>
+<th>Mean RPM</th>
+<th>First RPM</th>
+<th>Last RPM</th>
+<th>% change</th>
+<th>Trend</th>
+</tr></thead><tbody>
+<tr><td>Obolenskvirus AP22</td><td>120.67</td><td>120.67</td><td>120.67</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Phikzvirus phiKZ</td><td>103.33</td><td>103.33</td><td>103.33</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Human mastadenovirus F</td><td>77.33</td><td>77.33</td><td>77.33</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Pepper mild mottle virus</td><td>44.0</td><td>44.0</td><td>44.0</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Severe acute respiratory syndrome-related coronavirus</td><td>34.67</td><td>34.67</td><td>34.67</td><td>0.0</td><td>stable</td></tr>
+</tbody></table>
+<p>_AI trend interpretation:_</p>
+<h2>Trend Interpretation — ⚠️ Single Time Point</h2>
+<p><strong>No trends can be assessed.</strong> With <code>n_samples = 1</code>, every &quot;stable&quot; label and <code>0.0%</code> change is an <strong>artefact of having one observation</strong>, not evidence of stability. A genuine trend requires repeated sampling at the same site over time. Treat all values below as a single snapshot of environmental load.</p>
+<h3>Snapshot notes (not trends)</h3>
+<ul>
+<li><strong>Obolenskvirus AP22 / Phikzvirus phiKZ</strong> — bacteriophages; environmental/faecal indicators, <strong>not human pathogens</strong>. Report separately.</li>
+<li><strong>Pepper mild mottle virus (44 RPM)</strong> — normalization/faecal-load marker, <strong>not a threat</strong>. Confirms faecal input.</li>
+<li><strong>Human mastadenovirus F (77 RPM)</strong> — enteric adenovirus, stable non-enveloped virus; a detected sequence signal worth tracking.</li>
+<li><strong>SARS-CoV-2-related coronavirus (35 RPM)</strong> — respiratory pathogen, established WBE target; a detected signal, not a case count.</li>
+</ul>
+<h3>Recommendations</h3>
+<p>1. <strong>Collect repeat composite samples</strong> across time points to establish any real trajectory.</p>
+<p>2. Confirm pathogen signals (adenovirus, SARS-CoV-2) via <strong>targeted RT-qPCR</strong>.</p>
+<p>3. Normalize future comparisons to <strong>PMMoV</strong>.</p>
+<p>No increases or sharp increases reported.</p>
+<h2>7. Novel / Divergent Virus Candidates</h2>
+<p>_No novel candidates above threshold._</p>
+<h2>8. Epidemiological Risk Assessment</h2>
+<ul>
+<li><strong>Overall risk:</strong> High</li>
+</ul>
+<table><thead><tr>
+<th>Taxon</th>
+<th>Risk</th>
+<th>Reads</th>
+<th>Trend</th>
+<th>Reasons</th>
+</tr></thead><tbody>
+<tr><td>Severe acute respiratory syndrome-related coronavirus</td><td>High</td><td>52</td><td>stable</td><td>[LLM] Matches configured high-risk list with adequate support (52 reads, &gt;=10). Trend stable, not sharply increasing, so High rather than Critical. Recommend confirmatory RT-qPCR/amplicon sequencing.</td></tr>
+<tr><td>Norwalk virus</td><td>High</td><td>26</td><td>stable</td><td>[LLM] Matches configured high-risk list with adequate support (26 reads, &gt;=10). Stable trend, so High not Critical. Recommend orthogonal confirmation.</td></tr>
+<tr><td>Human mastadenovirus F</td><td>Medium</td><td>116</td><td>stable</td><td>[LLM] Non-phage, non-high-risk-list human enteric virus with substantial support (116 reads). Common faecal wastewater detection; rated Medium for substantial support.</td></tr>
+<tr><td>Betacoronavirus 1</td><td>Medium</td><td>26</td><td>stable</td><td>[LLM] Non-phage, non-high-risk-list human coronavirus with substantial support (26 reads). Rated Medium.</td></tr>
+<tr><td>Human coronavirus 229E</td><td>Medium</td><td>20</td><td>stable</td><td>[LLM] Non-phage, non-high-risk-list seasonal human coronavirus with adequate support (20 reads). Rated Medium for substantial support.</td></tr>
+</tbody></table>
+<p><strong>Normalization controls (not ranked as threats):</strong> Pepper mild mottle virus (66 reads — Pepper mild mottle virus (PMMoV))</p>
+<h2>AI-Assisted Interpretation</h2>
+<p>_Generated by claude-opus-4-8. Advisory only — the deterministic risk assessment above is authoritative; confirm all high-risk signals._</p>
+<h2>Executive Summary</h2>
+<p>This report interprets metagenomic sequence signals from a single wastewater/environmental sample collected at <strong>sapelo2</strong> on <strong>2025-12-02</strong>, classified with GOTTCHA2. These are <strong>detected sequence signals</strong>, not confirmed infections or outbreaks. Two taxa were flagged High — *Severe acute respiratory syndrome-related coronavirus* (SARS-CoV-2-related; 52 reads) and *Norwalk virus* (norovirus; 26 reads) — both with adequate read support but each reported as &quot;stable&quot; from a single time point, which cannot establish a genuine trend. No Critical detections and no novel candidates were reported. Both High signals warrant orthogonal confirmation before any public-health interpretation.</p>
+<h2>Risk Interpretation</h2>
+<p><strong>Severe acute respiratory syndrome-related coronavirus — High (52 reads, &quot;stable&quot;)</strong></p>
+<p>A respiratory Betacoronavirus with documented faecal shedding; wastewater surveillance is an established early-warning tool. Read support (52, ≥10) is adequate for a credible signal, but this remains a population-level sequence detection, not evidence of cases or transmission. Short reads cannot reliably resolve lineage/subtype. The &quot;stable&quot; label derives from one sample and is uninformative as a trend.</p>
+<p><strong>Norwalk virus (norovirus) — High (26 reads, &quot;stable&quot;)</strong></p>
+<p>A leading cause of viral gastroenteritis, abundantly shed in stool and commonly abundant in wastewater. Read support (26, ≥10) is adequate but modest. Detection reflects environmental presence of viral genetic material, not an outbreak. As above, no trend can be inferred from a single time point.</p>
+<p>*Context (Medium, not actioned here):* Human mastadenovirus F (116 reads), Betacoronavirus 1 (26 reads), and Human coronavirus 229E (20 reads) are common/seasonal human faecal or respiratory detections.</p>
+<h2>Recommended Public-Health Actions</h2>
+<ul>
+<li><strong>Confirm SARS-CoV-2-related coronavirus (High)</strong> on the same extract with targeted, validated RT-qPCR; follow with amplicon/targeted-capture sequencing for identity and, where possible, lineage.</li>
+<li><strong>Confirm Norwalk virus (High)</strong> with targeted RT-qPCR or amplicon sequencing before any interpretation.</li>
+<li><strong>Initiate repeat sampling</strong> at sapelo2 across multiple time points to establish whether any genuine trend exists; the current &quot;stable&quot; labels are not informative.</li>
+<li><strong>Integrate with clinical/syndromic surveillance</strong> before considering any public-health action.</li>
+<li>Treat Medium-risk enteric/respiratory detections as routine context; no immediate action.</li>
+</ul>
+<h2>Caveats &amp; Limitations</h2>
+<ul>
+<li>Single sample, single site, single date — <strong>no temporal trend can be established</strong>; &quot;stable&quot; is uninformative here.</li>
+<li>Single classifier (GOTTCHA2); k-mer/marker calls can mis-assign at low coverage. Coverage breadth/evenness, not provided, is stronger evidence than read count.</li>
+<li>8 taxa were flagged as potential false positives; database completeness bounds detection (absence ≠ absence).</li>
+<li>Strain/subtype claims from short reads are unreliable.</li>
+<li>3 bacteriophage taxa are environmental/faecal indicators, <strong>not human pathogens</strong>, and are reported separately.</li>
+<li>These signals are not clinical diagnoses and do not confirm any outbreak.</li>
+</ul>
+<h2>9. Human Review</h2>
+<ul>
+<li><strong>Review required:</strong> True</li>
+<li><strong>Decision:</strong> approved</li>
+<li><strong>Approved for report:</strong> True</li>
+<li><strong>Reviewer notes:</strong> 已审阅 Genome_72,批准 — Sihua Peng</li>
+</ul>
+<h2>10. Recommended Follow-up Actions</h2>
+<ul>
+<li>Confirm Severe acute respiratory syndrome-related coronavirus (High) with targeted RT-qPCR / amplicon sequencing</li>
+<li>Confirm Norwalk virus (High) with targeted RT-qPCR / amplicon sequencing</li>
+</ul>
+<h2>11. Warnings</h2>
+<ul>
+<li>No host_reference configured; using placeholder path in generated commands</li>
+<li>8 taxon(a) flagged as likely false positives / phage / low-confidence</li>
+</ul>
+<h2>12. Reproducibility</h2>
+<ul>
+<li><strong>MetaMAVS version:</strong> 0.1.0</li>
+<li><strong>Config:</strong> configs/sapelo2_config.yaml</li>
+<li><strong>Run directory:</strong> reports/sapelo2_genome72</li>
+<li><strong>Generated (UTC):</strong> 2026-06-09T14:02:21Z</li>
+</ul>
+<hr/>
+<p>_Generated by MetaMAVS. Detected signals require confirmatory testing._</p>
+</body>
+</html>
