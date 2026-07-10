@@ -4,6 +4,13 @@ from __future__ import annotations
 
 from metamavs.agents.novel_virus_agent import novel_virus_screening_agent_node
 from metamavs.agents.tool_output_parser_agent import tool_output_parser_agent_node
+from metamavs.state import MetaMAVSState
+
+
+def test_checkv_contigs_is_declared_in_state():
+    # Must be a declared channel or LangGraph drops the parser's update, so
+    # novel_virus never sees the CheckV contigs (integration regression guard).
+    assert "checkv_contigs" in MetaMAVSState.__annotations__
 
 
 def _novel_state(tmp_path, checkv_contigs):

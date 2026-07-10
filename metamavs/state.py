@@ -100,6 +100,7 @@ class MetaMAVSState(TypedDict, total=False):
     remote_execution_result: dict[str, Any]
     synced_manifest: dict[str, Any]
     parse_results: Annotated[list[dict[str, Any]], operator.add]
+    checkv_contigs: list[dict[str, Any]]  # parsed CheckV per-contig quality (HPC) -> novel candidates
 
     # --- cross-cutting accumulators (use reducers) -----------------------
     warnings: Annotated[list[str], operator.add]
@@ -186,6 +187,7 @@ def create_initial_state(
         remote_execution_result={},
         synced_manifest={},
         parse_results=[],
+        checkv_contigs=[],
         warnings=[],
         errors=[],
         execution_log=[],
