@@ -19,7 +19,7 @@ execution:
   threads: 8
 
 tools:
-  qc: {fastqc: false, fastp: false, multiqc: false}
+  qc: {fastqc: true, fastp: true, multiqc: false}   # real QC -> QC LLM agent fires
   host_removal: {tool: minimap2, host_reference: ""}
   viral_detection:
     tools: [gottcha2]
@@ -27,8 +27,8 @@ tools:
     # gottcha_db.species.fna.{mmi,stats,tax.tsv}).
     gottcha2_db: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species.fna
     gottcha2_level: species
-  assembly: {enabled: false, assembler: megahit}
-  novel_virus_screening: {enabled: false, tools: [checkv]}
+  assembly: {enabled: true, assembler: megahit}     # real assembly for novel-virus screening
+  novel_virus_screening: {enabled: true, tools: [checkv]}  # CheckV contigs -> novel candidates -> novel_virus LLM
 
 risk:
   high_risk_pathogens: [SARS-CoV-2, Influenza A virus, Influenza B virus, Norovirus, Enterovirus]
@@ -67,18 +67,27 @@ hpc:
   user: sp96859
   remote_base: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS
   partition: bahl_p
-  # GOTTCHA2-only: run a single job. (Add kraken2/host_removal/novel_virus later.)
-  steps: [gottcha2]
+  # Run QC + GOTTCHA2 + assembly/novel-virus so the QC and novel_virus LLM agents
+  # operate on REAL data (QC metrics from FastQC; novel candidates from CheckV).
+  steps: [qc, gottcha2, novel_virus]
   # GOTTCHA2's minimap2 index is ~94 GB -> needs a high-memory allocation.
   # NOTE: verify bahl_p nodes provide this much RAM (else use a highmem partition).
   step_resources:
     gottcha2: {mem: "120G", cpus: 16, time: "12:00:00"}
+    qc:          {mem: "8G",  cpus: 4,  time: "02:00:00"}
+    novel_virus: {mem: "64G", cpus: 16, time: "12:00:00"}   # megahit assembly + CheckV
   # Per-step environment: prepend the right conda env's bin to PATH (no conda init).
   step_env:
     gottcha2: ["export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"]
     kraken2:  ["export PATH=/home/sp96859/.conda/envs/kraken2_env/bin:$PATH"]
     host_removal: ["export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"]
-    novel_virus: ["export PATH=/home/sp96859/.conda/envs/megahit_env/bin:$PATH"]
+    # fastqc + fastp live in gottcha2_env.
+    qc: ["export PATH=/home/sp96859/.conda/envs/gottcha2_env/bin:$PATH"]
+    # megahit from megahit_env; checkv from ~/.local/bin; diamond from VirSorter2_new
+    # (CheckV calls diamond at runtime). CheckV needs its DB via CHECKVDB.
+    novel_virus:
+      - "export PATH=/home/sp96859/.conda/envs/megahit_env/bin:/home/sp96859/.conda/envs/VirSorter2_new/bin:$HOME/.local/bin:$PATH"
+      - "export CHECKVDB=/scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/checkv-db-v1.5"  # >>> TODO: match the real checkv-db-vX.X dir <<<
   retries: 3
   poll_interval_s: 60
   max_wait_s: 86400

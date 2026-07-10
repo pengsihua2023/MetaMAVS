@@ -4,22 +4,22 @@ from __future__ import annotations
 
 import metamavs.agents.abundance_agent as ab_mod
 import metamavs.agents.qc_agent as qc_mod
-from metamavs.agents.qc_agent import _llm_qc
+from metamavs.agents.qc_agent import llm_qc_assessment
 
 
 def test_qc_llm_disabled_returns_none():
-    assert _llm_qc({"config": {"llm": {"enabled": False}}}, {"per_sample": [{"x": 1}]}) is None
+    assert llm_qc_assessment({"config": {"llm": {"enabled": False}}}, {"per_sample": [{"x": 1}]}) is None
 
 
 def test_qc_llm_no_metrics_returns_none(monkeypatch):
     monkeypatch.setattr(qc_mod, "llm_available", lambda: True)
-    assert _llm_qc({"config": {"llm": {"enabled": True}}}, {"per_sample": []}) is None
+    assert llm_qc_assessment({"config": {"llm": {"enabled": True}}}, {"per_sample": []}) is None
 
 
 def test_qc_llm_generates(monkeypatch):
     monkeypatch.setattr(qc_mod, "llm_available", lambda: True)
     monkeypatch.setattr(qc_mod, "generate", lambda *a, **k: "Depth is adequate; one sample borderline.")
-    out = _llm_qc({"config": {"llm": {"enabled": True}}},
+    out = llm_qc_assessment({"config": {"llm": {"enabled": True}}},
                   {"per_sample": [{"sample_id": "s1", "mean_quality": 36, "total_reads": 2_000_000}]})
     assert "adequate" in out
 

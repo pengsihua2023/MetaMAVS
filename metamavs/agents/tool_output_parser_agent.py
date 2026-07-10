@@ -51,6 +51,7 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     kraken_rows: list[dict] = []
     bracken_by_sample: dict[str, list[dict]] = {}
     gottcha2_rows: list[dict] = []
+    checkv_rows: list[dict] = []
     warnings: list[str] = []
 
     for d in downloaded:
@@ -75,8 +76,14 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             bracken_by_sample.setdefault(sid, []).extend(out["records"])
         elif tool == "gottcha2":
             gottcha2_rows.extend(out["records"])
+        elif tool == "checkv":
+            checkv_rows.extend(out["records"])
 
     update: dict[str, Any] = {"parse_results": parse_results}
+    # Real assembled-contig quality (HPC mode); consumed by novel_virus_agent to
+    # derive real novel candidates. Absent in dry-run -> unchanged behaviour.
+    if checkv_rows:
+        update["checkv_contigs"] = checkv_rows
 
     # --- QC summary + pass/fail -----------------------------------------
     if qc_per_sample:
@@ -89,6 +96,14 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         qc_summary = {"n_samples": len(per), "n_pass": sum(v == "pass" for v in qc_pf.values()),
                       "n_fail": sum(v == "fail" for v in qc_pf.values()), "per_sample": per,
                       "exec_mode": "hpc", "note": "Parsed from real FastQC output."}
+        # QC LLM adequacy assessment: the qc_agent node ran earlier on synthetic
+        # placeholders (skipped by its guard); now that REAL FastQC metrics exist,
+        # run it here so the QC LLM agent fires on real data.
+        from .qc_agent import llm_qc_assessment
+        assessment = llm_qc_assessment(state, qc_summary)
+        if assessment:
+            qc_summary["llm_assessment"] = assessment
+            qc_summary["mode"] = "llm"
         write_json(run_dir / "intermediate" / "qc_summary.json", qc_summary)
         update["qc_summary"] = qc_summary
         update["qc_pass_fail"] = qc_pf

@@ -16,8 +16,14 @@ from ..utils.file_utils import write_commands, write_json
 from ..utils.logging_utils import get_logger
 
 
-def _llm_qc(state: MetaMAVSState, qc_summary: dict) -> str | None:
-    """Optional LLM QC-adequacy assessment; None on disabled/no-key/failure."""
+def llm_qc_assessment(state: MetaMAVSState, qc_summary: dict) -> str | None:
+    """Optional LLM QC-adequacy assessment; None on disabled/no-key/failure.
+
+    Also invoked by the tool-output parser in HPC mode, where the real FastQC
+    metrics only become available after the remote jobs are downloaded (the
+    qc_agent node runs earlier on synthetic placeholders and is skipped by the
+    ``synthetic`` guard below).
+    """
 
     llm_cfg = (state.get("config", {}) or {}).get("llm", {}) or {}
     if not llm_cfg.get("enabled", False) or not llm_available() or not qc_summary.get("per_sample"):
@@ -115,7 +121,7 @@ def qc_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "per_sample": per_sample,
         "note": "Metrics are synthetic placeholders in dry-run mode.",
     }
-    llm_qc = _llm_qc(state, qc_summary)
+    llm_qc = llm_qc_assessment(state, qc_summary)
     if llm_qc:
         qc_summary["llm_assessment"] = llm_qc
         qc_summary["mode"] = "llm"

@@ -131,6 +131,33 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
                     }
                 )
 
+    # Also derive candidates from REAL CheckV contigs (HPC mode), if present.
+    # A contig is a candidate when CheckV judged it a credible viral genome:
+    # a High/Medium/Complete quality call, or completeness >= 50%.
+    checkv_contigs = state.get("checkv_contigs") or []
+    _GOOD_QUALITY = {"Complete", "High-quality", "Medium-quality"}
+    n_from_checkv = 0
+    for c in checkv_contigs:
+        quality = str(c.get("checkv_quality", "")).strip()
+        try:
+            completeness = float(c.get("completeness", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            completeness = 0.0
+        if quality not in _GOOD_QUALITY and completeness < 50.0:
+            continue
+        n_from_checkv += 1
+        candidates.append(
+            {
+                "candidate_id": f"NVC_{len(candidates) + 1:03d}",
+                "putative_taxon": f"assembled contig {c.get('contig_id', '?')}",
+                "family_hint": "unclassified (assembled)",
+                "total_reads": 0,
+                "confidence": round(completeness / 100.0, 3),
+                "evidence": (f"CheckV {quality or 'quality n/d'}, "
+                             f"completeness {completeness:.0f}%, viral_genes {c.get('viral_genes', '?')}"),
+            }
+        )
+
     cand_path = write_csv(run_dir / "tables" / "novel_candidate_table.csv", candidates)
 
     # LLM agent layer (optional): interpret the novel/divergent candidates.
@@ -153,7 +180,10 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "exec_mode": exec_report["mode"],
         "llm_assessment": llm_assessment,
         "mode": "llm" if llm_assessment else "deterministic",
-        "note": "Candidates derived from synthetic taxonomy in dry-run mode.",
+        "n_candidates_from_checkv": n_from_checkv,
+        "note": (f"{n_from_checkv} candidate(s) from real CheckV contigs; "
+                 "remainder from unclassified taxonomy." if checkv_contigs
+                 else "Candidates derived from synthetic taxonomy in dry-run mode."),
     }
     write_json(run_dir / "intermediate" / "novel_candidate_summary.json", summary)
 
