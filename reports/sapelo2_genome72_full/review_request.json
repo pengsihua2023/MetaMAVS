@@ -1,5 +1,5 @@
 {
-  "run_id": "run_20260710_234706",
+  "run_id": "run_20260711_172021",
   "triggers": [
     "overall risk = High",
     "29 novel candidate(s)"
@@ -12,31 +12,31 @@
         "risk_level": "High",
         "total_reads": 37,
         "trend": "stable",
-        "reasons": "[LLM] Matches the high-risk pathogen list (Betacoronavirus) and has adequate read support (37 reads), warranting a High risk assessment for surveillance prioritization."
+        "reasons": "[LLM] Matches the high-risk Betacoronavirus list with adequate read support (37 reads). Requires orthogonal confirmation."
       },
       {
         "taxon_name": "Norwalk virus",
         "risk_level": "High",
         "total_reads": 24,
         "trend": "stable",
-        "reasons": "[LLM] Matches the high-risk pathogen list (Norovirus) and has substantial read support (24 reads), indicating a significant environmental signal."
+        "reasons": "[LLM] Matches the high-risk pathogen list (Norovirus) with substantial read support (24 reads). Requires orthogonal confirmation."
       },
       {
         "taxon_name": "Human mastadenovirus F",
         "risk_level": "Medium",
         "total_reads": 64,
         "trend": "stable",
-        "reasons": "[LLM] Non-pathogen virus with substantial read support (64 reads). Classified as Medium risk based on substantial signal, though it does not match the high-risk pathogen list."
+        "reasons": "[LLM] Substantial read support (64 reads) for a non-phage, non-pathogen virus, warranting a Medium risk assessment based on presence."
       },
       {
         "taxon_name": "Human coronavirus 229E",
         "risk_level": "Medium",
         "total_reads": 16,
         "trend": "stable",
-        "reasons": "[LLM] Non-pathogen virus with moderate read support (16 reads). Classified as Medium risk based on signal strength."
+        "reasons": "[LLM] Substantial read support (16 reads) for a non-high-risk pathogen, warranting a Medium risk assessment."
       },
       {
-        "taxon_name": "assembled contig k141_8205",
+        "taxon_name": "assembled viral contig k141_60867",
         "risk_level": "Medium",
         "total_reads": 0,
         "trend": "unknown",
