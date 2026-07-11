@@ -45,6 +45,22 @@ def test_good_checkv_contig_becomes_candidate(tmp_path):
     assert "real CheckV contigs" in summary["note"]
 
 
+def test_llm_candidate_list_is_capped(tmp_path, monkeypatch):
+    import metamavs.agents.novel_virus_agent as nva
+    seen = {}
+    monkeypatch.setattr(nva, "llm_available", lambda: True)
+    monkeypatch.setattr(nva, "build_novel_user", lambda cands: seen.setdefault("n", len(cands)) or "u")
+    monkeypatch.setattr(nva, "generate_json", lambda *a, **k: {"assessments": []})
+    contigs = [{"sample_id": "S1", "contig_id": f"k{i}", "checkv_quality": "High-quality",
+                "completeness": 90.0 - i, "viral_genes": 5, "tool": "checkv"} for i in range(20)]
+    st = _novel_state(tmp_path, contigs)
+    st["config"]["llm"] = {"enabled": True}
+    out = nva.novel_virus_screening_agent_node(st)
+    assert seen["n"] <= nva._LLM_MAX_CANDIDATES         # only the top N go to the LLM
+    assert out["novel_candidate_summary"]["n_candidates"] == 20   # table keeps all
+    assert out["novel_candidate_summary"]["mode"] == "llm"
+
+
 def test_no_checkv_contigs_is_unchanged(tmp_path):
     out = novel_virus_screening_agent_node(_novel_state(tmp_path, []))
     summary = out["novel_candidate_summary"]

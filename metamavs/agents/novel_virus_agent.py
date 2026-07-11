@@ -17,6 +17,10 @@ from ..utils.logging_utils import get_logger
 
 logger = get_logger("agents.novel_virus")
 
+# Cap how many candidates are sent to the LLM in one JSON request; a longer list
+# overflows the output-token budget and truncates the reply (JSON parse fails).
+_LLM_MAX_CANDIDATES = 12
+
 
 def _load_samples(state: MetaMAVSState) -> list[dict[str, Any]]:
     path = state.get("validated_manifest_path")
@@ -161,16 +165,22 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     cand_path = write_csv(run_dir / "tables" / "novel_candidate_table.csv", candidates)
 
     # LLM agent layer (optional): interpret the novel/divergent candidates.
+    # Send only the top candidates (highest confidence) to the LLM: a large
+    # candidate list (e.g. many CheckV contigs) otherwise overflows the output
+    # token budget and truncates the JSON reply. The full list stays in the table.
     llm_cfg = config.get("llm", {}) or {}
     llm_assessment = None
     if candidates and llm_cfg.get("enabled", False) and llm_available():
-        data = generate_json(
-            NOVEL_SYSTEM, build_novel_user(candidates), cached_prefix=SHARED_REFERENCE,
-            **resolve_params(llm_cfg, "novel_virus"),
-        )
+        top = sorted(candidates, key=lambda c: float(c.get("confidence", 0.0) or 0.0),
+                     reverse=True)[:_LLM_MAX_CANDIDATES]
+        params = resolve_params(llm_cfg, "novel_virus")
+        params["max_tokens"] = max(int(params.get("max_tokens", 4000)), 6000)
+        data = generate_json(NOVEL_SYSTEM, build_novel_user(top),
+                             cached_prefix=SHARED_REFERENCE, **params)
         if data:
             llm_assessment = data
-            logger.info("Novel screening: LLM assessed %d candidate(s)", len(candidates))
+            logger.info("Novel screening: LLM assessed %d of %d candidate(s)",
+                        len(top), len(candidates))
 
     summary = {
         "n_candidates": len(candidates),
