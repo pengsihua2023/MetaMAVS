@@ -52,6 +52,7 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
     bracken_by_sample: dict[str, list[dict]] = {}
     gottcha2_rows: list[dict] = []
     checkv_rows: list[dict] = []
+    homology_rows: list[dict] = []
     warnings: list[str] = []
 
     for d in downloaded:
@@ -78,12 +79,17 @@ def tool_output_parser_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             gottcha2_rows.extend(out["records"])
         elif tool == "checkv":
             checkv_rows.extend(out["records"])
+        elif tool == "contig_homology":
+            homology_rows.extend(out["records"])
 
     update: dict[str, Any] = {"parse_results": parse_results}
     # Real assembled-contig quality (HPC mode); consumed by novel_virus_agent to
     # derive real novel candidates. Absent in dry-run -> unchanged behaviour.
     if checkv_rows:
         update["checkv_contigs"] = checkv_rows
+    # Best known-virus protein hit per contig -> known vs suspected-novel split.
+    if homology_rows:
+        update["contig_homology"] = {r["contig_id"]: r for r in homology_rows}
 
     # --- QC summary + pass/fail -----------------------------------------
     if qc_per_sample:

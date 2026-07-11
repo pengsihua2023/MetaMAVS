@@ -182,17 +182,27 @@ def build_job_specs(state: dict) -> list[RemoteJobSpec]:
             out += [g2out, g2lin]
         add("gottcha2", "gottcha2", cmds, out, host_dep)
 
-    # --- novel_virus (assembly + checkv) ---
+    # --- novel_virus (assembly + checkv [+ known-virus homology]) ---
     if "novel_virus" in steps:
+        nv = tools_cfg.get("novel_virus_screening", {}) or {}
+        vp_db = nv.get("viral_protein_db")
         out, cmds = [], [f"mkdir -p {rrun}/results/novel_virus {rrun}/work"]
         for s in samples:
             sid = s["sample_id"]
             r1, r2 = reads_for(s)
+            contigs = f"{rrun}/work/{sid}.assembly/final.contigs.fa"
             cmds.append(f"megahit -1 {r1} -2 {r2} -o {rrun}/work/{sid}.assembly")
-            cmds.append(f"checkv end_to_end {rrun}/work/{sid}.assembly/final.contigs.fa {rrun}/work/{sid}.checkv")
+            cmds.append(f"checkv end_to_end {contigs} {rrun}/work/{sid}.checkv")
             cmds.append(f"cp {rrun}/work/{sid}.checkv/quality_summary.tsv "
                         f"{rrun}/results/novel_virus/{sid}.checkv_quality_summary.tsv")
             out.append(f"{rrun}/results/novel_virus/{sid}.checkv_quality_summary.tsv")
+            if vp_db:
+                # blastx assembled contigs vs known-virus proteins; best hit per contig.
+                hom = f"{rrun}/results/novel_virus/{sid}.contig_homology.tsv"
+                cmds.append(f"diamond blastx -q {contigs} -d {vp_db} -p {threads} "
+                            f"--outfmt 6 qseqid sseqid pident evalue bitscore "
+                            f"--max-target-seqs 1 --evalue 1e-5 -o {hom}")
+                out.append(hom)
         add("novel_virus", "novel_virus", cmds, out, host_dep)
 
     return specs

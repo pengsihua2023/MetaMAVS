@@ -101,6 +101,7 @@ class MetaMAVSState(TypedDict, total=False):
     synced_manifest: dict[str, Any]
     parse_results: Annotated[list[dict[str, Any]], operator.add]
     checkv_contigs: list[dict[str, Any]]  # parsed CheckV per-contig quality (HPC) -> novel candidates
+    contig_homology: dict[str, Any]  # contig_id -> best known-virus hit (novelty check)
 
     # --- cross-cutting accumulators (use reducers) -----------------------
     warnings: Annotated[list[str], operator.add]
@@ -188,6 +189,7 @@ def create_initial_state(
         synced_manifest={},
         parse_results=[],
         checkv_contigs=[],
+        contig_homology={},
         warnings=[],
         errors=[],
         execution_log=[],

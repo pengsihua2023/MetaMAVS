@@ -136,11 +136,18 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
                 )
 
     # Also derive candidates from REAL CheckV contigs (HPC mode), if present.
-    # A contig is a candidate when CheckV judged it a credible viral genome:
-    # a High/Medium/Complete quality call, or completeness >= 50%.
+    # A contig is a credible viral genome when CheckV calls it High/Medium/Complete
+    # quality (or completeness >= 50%). Novelty is then judged by protein homology:
+    # a contig matching a KNOWN virus at >= novelty_min_pident is reported as a known
+    # assembled genome (NOT novel); only contigs with no/weak hit are "suspected novel".
+    # If no homology search ran, novelty is explicitly marked "not verified".
     checkv_contigs = state.get("checkv_contigs") or []
+    homology = state.get("contig_homology") or {}
+    homology_ran = bool(homology)
+    min_pident = float(nv_cfg.get("novelty_min_pident", 90.0))
     _GOOD_QUALITY = {"Complete", "High-quality", "Medium-quality"}
     n_from_checkv = 0
+    n_known_filtered = 0
     for c in checkv_contigs:
         quality = str(c.get("checkv_quality", "")).strip()
         try:
@@ -149,16 +156,30 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
             completeness = 0.0
         if quality not in _GOOD_QUALITY and completeness < 50.0:
             continue
+        cid = c.get("contig_id", "?")
+        hit = homology.get(cid)
+        hit_pident = float(hit.get("pident", 0.0)) if hit else 0.0
+        if hit and hit_pident >= min_pident:
+            n_known_filtered += 1
+            continue  # matches a known virus -> not a novel candidate
+        if not homology_ran:
+            novelty = "novelty NOT verified (no homology search)"
+        elif not hit:
+            novelty = "no known-virus protein hit -> suspected novel"
+        else:
+            novelty = (f"best known-virus hit {hit.get('subject', '?')} at "
+                       f"{hit_pident:.0f}% (< {min_pident:.0f}%) -> divergent")
         n_from_checkv += 1
         candidates.append(
             {
                 "candidate_id": f"NVC_{len(candidates) + 1:03d}",
-                "putative_taxon": f"assembled contig {c.get('contig_id', '?')}",
+                "putative_taxon": f"assembled viral contig {cid}",
                 "family_hint": "unclassified (assembled)",
                 "total_reads": 0,
                 "confidence": round(completeness / 100.0, 3),
                 "evidence": (f"CheckV {quality or 'quality n/d'}, "
-                             f"completeness {completeness:.0f}%, viral_genes {c.get('viral_genes', '?')}"),
+                             f"completeness {completeness:.0f}%, viral_genes {c.get('viral_genes', '?')}; "
+                             f"{novelty}"),
             }
         )
 
@@ -191,9 +212,16 @@ def novel_virus_screening_agent_node(state: MetaMAVSState) -> dict[str, Any]:
         "llm_assessment": llm_assessment,
         "mode": "llm" if llm_assessment else "deterministic",
         "n_candidates_from_checkv": n_from_checkv,
-        "note": (f"{n_from_checkv} candidate(s) from real CheckV contigs; "
-                 "remainder from unclassified taxonomy." if checkv_contigs
-                 else "Candidates derived from synthetic taxonomy in dry-run mode."),
+        "n_known_virus_filtered": n_known_filtered,
+        "novelty_checked": homology_ran,
+        "note": (
+            (f"{n_from_checkv} suspected-novel candidate(s) from CheckV contigs "
+             f"(homology-checked: {n_known_filtered} known virus/es excluded at >= {min_pident:.0f}% pident)."
+             if homology_ran else
+             f"{n_from_checkv} candidate(s) from real CheckV contigs; NOVELTY NOT VERIFIED "
+             "(no viral_protein_db configured for homology search).")
+            if checkv_contigs
+            else "Candidates derived from synthetic taxonomy in dry-run mode."),
     }
     write_json(run_dir / "intermediate" / "novel_candidate_summary.json", summary)
 

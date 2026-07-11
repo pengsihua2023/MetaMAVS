@@ -28,7 +28,13 @@ tools:
     gottcha2_db: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/gottcha2_db/gottcha_db.species.fna
     gottcha2_level: species
   assembly: {enabled: true, assembler: megahit}     # real assembly for novel-virus screening
-  novel_virus_screening: {enabled: true, tools: [checkv]}  # CheckV contigs -> novel candidates -> novel_virus LLM
+  novel_virus_screening:
+    enabled: true
+    tools: [checkv]                                 # CheckV contigs -> candidate viral genomes
+    # Known-virus homology check: contigs matching RVDB proteins at >= novelty_min_pident
+    # are reported as KNOWN assembled genomes; only no/weak-hit contigs are "suspected novel".
+    viral_protein_db: /scratch/sp96859/Meta-genome-data-analysis/Apptainer/databases/RVDB/RVDB_prot_ref.dmnd
+    novelty_min_pident: 90.0
 
 risk:
   high_risk_pathogens: [SARS-CoV-2, Influenza A virus, Influenza B virus, Norovirus, Enterovirus]

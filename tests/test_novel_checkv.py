@@ -13,17 +13,69 @@ def test_checkv_contigs_is_declared_in_state():
     assert "checkv_contigs" in MetaMAVSState.__annotations__
 
 
-def _novel_state(tmp_path, checkv_contigs):
+def _novel_state(tmp_path, checkv_contigs, contig_homology=None):
     return {
         "config": {
             "execution": {"dry_run": True, "mode": "local"},
             "tools": {"assembly": {"enabled": True, "assembler": "megahit"},
-                      "novel_virus_screening": {"enabled": True, "tools": ["checkv"]}},
+                      "novel_virus_screening": {"enabled": True, "tools": ["checkv"],
+                                                "novelty_min_pident": 90.0}},
             "llm": {"enabled": False},
         },
         "run_id": "t", "run_dir": str(tmp_path),
         "checkv_contigs": checkv_contigs,
+        "contig_homology": contig_homology or {},
     }
+
+
+def test_homology_splits_known_from_suspected_novel(tmp_path):
+    from metamavs.parsers.contig_homology import parse_contig_homology
+    contigs = [
+        {"sample_id": "S1", "contig_id": "k1", "checkv_quality": "High-quality",
+         "completeness": 95.0, "viral_genes": 9, "tool": "checkv"},   # known (95% hit)
+        {"sample_id": "S1", "contig_id": "k2", "checkv_quality": "High-quality",
+         "completeness": 88.0, "viral_genes": 7, "tool": "checkv"},   # divergent (55% hit)
+        {"sample_id": "S1", "contig_id": "k3", "checkv_quality": "Medium-quality",
+         "completeness": 60.0, "viral_genes": 4, "tool": "checkv"},   # no hit
+    ]
+    homology = {"k1": {"contig_id": "k1", "subject": "known|virusA", "pident": 95.0},
+                "k2": {"contig_id": "k2", "subject": "known|virusB", "pident": 55.0}}
+    out = novel_virus_screening_agent_node(_novel_state(tmp_path, contigs, homology))
+    nv = out["novel_candidate_summary"]
+    assert nv["novelty_checked"] is True
+    assert nv["n_known_virus_filtered"] == 1          # k1 excluded (>=90%)
+    assert nv["n_candidates"] == 2                    # k2 (divergent) + k3 (no hit)
+    taxa = {c["putative_taxon"] for c in nv["candidates"]}
+    assert "assembled viral contig k1" not in taxa
+    assert "assembled viral contig k2" in taxa
+    assert any("55%" in c["evidence"] for c in nv["candidates"])
+    assert any("no known-virus" in c["evidence"] for c in nv["candidates"])
+
+
+def test_no_homology_marks_novelty_unverified(tmp_path):
+    contigs = [{"sample_id": "S1", "contig_id": "k1", "checkv_quality": "High-quality",
+                "completeness": 91.0, "viral_genes": 7, "tool": "checkv"}]
+    out = novel_virus_screening_agent_node(_novel_state(tmp_path, contigs))  # no homology
+    nv = out["novel_candidate_summary"]
+    assert nv["novelty_checked"] is False
+    assert nv["n_candidates"] == 1
+    assert any("NOT verified" in c["evidence"] for c in nv["candidates"])
+
+
+def test_parse_contig_homology_best_hit(tmp_path):
+    from metamavs.parsers.contig_homology import parse_contig_homology
+    tsv = tmp_path / "S1.contig_homology.tsv"
+    tsv.write_text(
+        "k1\tvirusA\t80.0\t1e-40\t200\n"
+        "k1\tvirusB\t95.0\t1e-60\t320\n"   # better bitscore -> best for k1
+        "k2\tvirusC\t60.0\t1e-20\t120\n",
+        encoding="utf-8",
+    )
+    r = parse_contig_homology(str(tsv), "S1")
+    assert r["result"].ok
+    best = {rec["contig_id"]: rec for rec in r["records"]}
+    assert best["k1"]["subject"] == "virusB" and best["k1"]["pident"] == 95.0
+    assert best["k2"]["subject"] == "virusC"
 
 
 def test_good_checkv_contig_becomes_candidate(tmp_path):
@@ -40,8 +92,8 @@ def test_good_checkv_contig_becomes_candidate(tmp_path):
     assert summary["n_candidates_from_checkv"] == 2
     assert summary["n_candidates"] == 2
     names = {c["putative_taxon"] for c in summary["candidates"]}
-    assert "assembled contig k141_1" in names
-    assert "assembled contig k141_3" in names
+    assert "assembled viral contig k141_1" in names
+    assert "assembled viral contig k141_3" in names
     assert "real CheckV contigs" in summary["note"]
 
 

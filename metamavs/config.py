@@ -64,6 +64,12 @@ class AssemblyConfig(BaseModel):
 class NovelVirusConfig(BaseModel):
     enabled: bool = True
     tools: list[str] = Field(default_factory=lambda: ["virsorter2", "checkv"])
+    # Optional DIAMOND protein DB of KNOWN viruses (e.g. RVDB / viral RefSeq, .dmnd).
+    # When set, assembled contigs are blastx'd against it: a CheckV-quality contig
+    # matching a known virus at >= novelty_min_pident is reported as a known
+    # assembled genome (not novel); only contigs with no/weak hit are "suspected novel".
+    viral_protein_db: str | None = None
+    novelty_min_pident: float = Field(default=90.0, ge=0.0, le=100.0)
 
 
 class ToolsConfig(BaseModel):

@@ -9,6 +9,7 @@ Phases 1-2).
 from __future__ import annotations
 
 from .checkv import parse_checkv
+from .contig_homology import parse_contig_homology
 from .diamond import parse_diamond
 from .fastqc import parse_fastqc
 from .gottcha2 import parse_gottcha2
@@ -22,6 +23,7 @@ PARSERS = {
     "kraken2.report": ("kraken2", parse_kraken2),
     "bracken": ("bracken", parse_bracken),
     "gottcha2.tsv": ("gottcha2", parse_gottcha2),
+    "contig_homology": ("contig_homology", parse_contig_homology),
     "diamond.tsv": ("diamond", parse_diamond),
     "checkv": ("checkv", parse_checkv),
 }
@@ -35,4 +37,5 @@ __all__ = [
     "parse_gottcha2",
     "parse_diamond",
     "parse_checkv",
+    "parse_contig_homology",
 ]
