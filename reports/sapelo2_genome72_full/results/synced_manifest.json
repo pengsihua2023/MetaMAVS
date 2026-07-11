@@ -1,0 +1,31 @@
+{
+  "run_id": "run_20260710_234706",
+  "downloaded": [
+    {
+      "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_234706/results/qc/Genome_72.fastqc_data.txt",
+      "local_path": "reports/sapelo2_genome72_full/results/raw/qc/Genome_72.fastqc_data.txt",
+      "size": 16471,
+      "ok": true
+    },
+    {
+      "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_234706/results/viral_detection/Genome_72.gottcha2.tsv",
+      "local_path": "reports/sapelo2_genome72_full/results/raw/gottcha2/Genome_72.gottcha2.tsv",
+      "size": 19474,
+      "ok": true
+    },
+    {
+      "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_234706/results/viral_detection/Genome_72.gottcha2.lineage.tsv",
+      "local_path": "reports/sapelo2_genome72_full/results/raw/gottcha2/Genome_72.gottcha2.lineage.tsv",
+      "size": 11382,
+      "ok": true
+    },
+    {
+      "remote_path": "/scratch/sp96859/Meta-genome-data-analysis/Apptainer/Meta_MAVS/metamavs/run_20260710_234706/results/novel_virus/Genome_72.checkv_quality_summary.tsv",
+      "local_path": "reports/sapelo2_genome72_full/results/raw/novel_virus/Genome_72.checkv_quality_summary.tsv",
+      "size": 5957655,
+      "ok": true
+    }
+  ],
+  "missing": [],
+  "complete": true
+}

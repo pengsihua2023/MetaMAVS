@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>MetaMAVS — run_20260710_234706</title>
+<style>
+body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:960px;margin:2rem auto;padding:0 1rem;color:#1a1a1a;line-height:1.5}
+h1,h2,h3{color:#0b3d66}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+th,td{border:1px solid #ccc;padding:6px 10px;text-align:left}
+th{background:#f0f4f8}
+code{background:#f3f3f3;padding:1px 4px;border-radius:3px}
+hr{border:none;border-top:1px solid #ddd;margin:1.5rem 0}
+</style>
+</head>
+<body>
+<h1>MetaMAVS Surveillance Report: sapelo2_genome72_full</h1>
+<p>&gt; _Research-grade metagenomic virus surveillance. Signals below are <strong>detected sequence signals</strong>, not confirmed infections. Confirmatory testing is required before any public-health action._</p>
+<h2>1. Project Summary</h2>
+<ul>
+<li><strong>Project:</strong> MetaMAVS</li>
+<li><strong>Run name:</strong> sapelo2_genome72_full</li>
+<li><strong>Run id:</strong> run_20260710_234706</li>
+<li><strong>Mode:</strong> execution</li>
+<li><strong>Overall risk:</strong> High</li>
+</ul>
+<h2>2. Sample Summary</h2>
+<ul>
+<li><strong>Number of samples:</strong> 1</li>
+<li><strong>Sequencing type:</strong> paired_end</li>
+<li><strong>Locations:</strong> sapelo2</li>
+<li><strong>Collection dates:</strong> 2025-12-02</li>
+</ul>
+<h2>3. Quality Control</h2>
+<ul>
+<li><strong>Passed:</strong> 1</li>
+<li><strong>Failed:</strong> 0</li>
+</ul>
+<table><thead><tr>
+<th>Sample</th>
+<th>Mean Q</th>
+<th>Total reads</th>
+<th>Adapter %</th>
+<th>QC</th>
+</tr></thead><tbody>
+<tr><td>Genome_72</td><td>34.9</td><td>3326783</td><td>-</td><td>pass</td></tr>
+</tbody></table>
+<p>_AI QC note:_ The QC metrics for &quot;Genome_72&quot; are <strong>ADEQUATE</strong> for sensitive viral detection.</p>
+<p>The sample exhibits extremely high sequencing depth (3.3M reads), which maximizes sensitivity for low-abundance viruses. The mean quality score (34.9) is high, and the read length (150) is sufficient. The &quot;pass&quot; status indicates no immediate issues with adapter contamination or overall sequencing quality.</p>
+<p><strong>Recommendation:</strong> Proceed with analysis. No re-sequencing is warranted based on these metrics.</p>
+<h2>4. Host Read Removal</h2>
+<ul>
+<li><strong>Tool:</strong> minimap2</li>
+<li><strong>Host reference:</strong> /path/to/host/reference</li>
+</ul>
+<table><thead><tr>
+<th>Sample</th>
+<th>Host read %</th>
+<th>Non-host reads</th>
+</tr></thead><tbody>
+<tr><td>Genome_72</td><td>85.0</td><td>300000</td></tr>
+</tbody></table>
+<h2>5. Viral Detection &amp; Taxonomy</h2>
+<ul>
+<li><strong>Detection tools:</strong> gottcha2</li>
+<li><strong>Candidate taxa:</strong> 18</li>
+<li><strong>Flagged (phage/FP/low-conf):</strong> 11</li>
+<li><strong>Phage taxa:</strong> 4</li>
+<li><strong>Pathogen-like taxa:</strong> 4</li>
+</ul>
+<h2>6. Abundance Trends</h2>
+<table><thead><tr>
+<th>Taxon</th>
+<th>Mean RPM</th>
+<th>First RPM</th>
+<th>Last RPM</th>
+<th>% change</th>
+<th>Trend</th>
+</tr></thead><tbody>
+<tr><td>Human mastadenovirus F</td><td>19.24</td><td>19.24</td><td>19.24</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Obolenskvirus AP22</td><td>16.53</td><td>16.53</td><td>16.53</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Phikzvirus phiKZ</td><td>15.93</td><td>15.93</td><td>15.93</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Pepper mild mottle virus</td><td>12.32</td><td>12.32</td><td>12.32</td><td>0.0</td><td>stable</td></tr>
+<tr><td>Severe acute respiratory syndrome-related coronavirus</td><td>11.12</td><td>11.12</td><td>11.12</td><td>0.0</td><td>stable</td></tr>
+</tbody></table>
+<p>_AI trend interpretation:_</p>
+<p>Based on this single-sample data, no epidemiological trend or conclusion regarding an outbreak can be established. Abundance reflects the current environmental viral load, not case counts.</p>
+<p>All observed taxa, including the top signal, Human mastadenovirus F (19.24 RPM) and the Severe acute respiratory syndrome-related coronavirus (11.12 RPM), show a &quot;stable&quot; trend. This stability is uninformative, and a single time point cannot establish a temporal pattern.</p>
+<p>To determine if these signals represent a genuine increase or decrease, <strong>repeated sampling across multiple time points is essential.</strong> We recommend repeat sampling to establish a reliable trend before any public health action is considered.</p>
+<h2>7. Novel / Divergent Virus Candidates</h2>
+<table><thead><tr>
+<th>Candidate</th>
+<th>Putative taxon</th>
+<th>Reads</th>
+<th>Confidence</th>
+<th>Evidence</th>
+</tr></thead><tbody>
+<tr><td>NVC_001</td><td>assembled contig k141_8205</td><td>0</td><td>0.913</td><td>CheckV High-quality, completeness 91%, viral_genes 7</td></tr>
+<tr><td>NVC_002</td><td>assembled contig k141_22106</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_003</td><td>assembled contig k141_27848</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_004</td><td>assembled contig k141_54255</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_005</td><td>assembled contig k141_14489</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_006</td><td>assembled contig k141_50456</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_007</td><td>assembled contig k141_22755</td><td>0</td><td>0.88</td><td>CheckV Medium-quality, completeness 88%, viral_genes 1</td></tr>
+<tr><td>NVC_008</td><td>assembled contig k141_59057</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_009</td><td>assembled contig k141_45707</td><td>0</td><td>0.881</td><td>CheckV Medium-quality, completeness 88%, viral_genes 2</td></tr>
+<tr><td>NVC_010</td><td>assembled contig k141_56208</td><td>0</td><td>0.629</td><td>CheckV Medium-quality, completeness 63%, viral_genes 2</td></tr>
+<tr><td>NVC_011</td><td>assembled contig k141_25606</td><td>0</td><td>0.638</td><td>CheckV Medium-quality, completeness 64%, viral_genes 1</td></tr>
+<tr><td>NVC_012</td><td>assembled contig k141_19319</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_013</td><td>assembled contig k141_33897</td><td>0</td><td>0.635</td><td>CheckV Medium-quality, completeness 64%, viral_genes 0</td></tr>
+<tr><td>NVC_014</td><td>assembled contig k141_29873</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_015</td><td>assembled contig k141_45317</td><td>0</td><td>0.557</td><td>CheckV Medium-quality, completeness 56%, viral_genes 27</td></tr>
+<tr><td>NVC_016</td><td>assembled contig k141_52976</td><td>0</td><td>0.866</td><td>CheckV Medium-quality, completeness 87%, viral_genes 2</td></tr>
+<tr><td>NVC_017</td><td>assembled contig k141_34455</td><td>0</td><td>0.516</td><td>CheckV Medium-quality, completeness 52%, viral_genes 1</td></tr>
+<tr><td>NVC_018</td><td>assembled contig k141_42526</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_019</td><td>assembled contig k141_61025</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_020</td><td>assembled contig k141_20091</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_021</td><td>assembled contig k141_18586</td><td>0</td><td>0.538</td><td>CheckV Medium-quality, completeness 54%, viral_genes 1</td></tr>
+<tr><td>NVC_022</td><td>assembled contig k141_54479</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 4</td></tr>
+<tr><td>NVC_023</td><td>assembled contig k141_36833</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_024</td><td>assembled contig k141_21054</td><td>0</td><td>0.538</td><td>CheckV Medium-quality, completeness 54%, viral_genes 32</td></tr>
+<tr><td>NVC_025</td><td>assembled contig k141_45003</td><td>0</td><td>0.549</td><td>CheckV Medium-quality, completeness 55%, viral_genes 1</td></tr>
+<tr><td>NVC_026</td><td>assembled contig k141_30034</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+<tr><td>NVC_027</td><td>assembled contig k141_61067</td><td>0</td><td>0.806</td><td>CheckV Medium-quality, completeness 81%, viral_genes 1</td></tr>
+<tr><td>NVC_028</td><td>assembled contig k141_30128</td><td>0</td><td>0.799</td><td>CheckV Medium-quality, completeness 80%, viral_genes 1</td></tr>
+<tr><td>NVC_029</td><td>assembled contig k141_61293</td><td>0</td><td>1.0</td><td>CheckV High-quality, completeness 100%, viral_genes 1</td></tr>
+</tbody></table>
+<h2>8. Epidemiological Risk Assessment</h2>
+<ul>
+<li><strong>Overall risk:</strong> High</li>
+</ul>
+<table><thead><tr>
+<th>Taxon</th>
+<th>Risk</th>
+<th>Reads</th>
+<th>Trend</th>
+<th>Reasons</th>
+</tr></thead><tbody>
+<tr><td>Severe acute respiratory syndrome-related coronavirus</td><td>High</td><td>37</td><td>stable</td><td>[LLM] Matches the high-risk pathogen list (Betacoronavirus) and has adequate read support (37 reads), warranting a High risk assessment for surveillance prioritization.</td></tr>
+<tr><td>Norwalk virus</td><td>High</td><td>24</td><td>stable</td><td>[LLM] Matches the high-risk pathogen list (Norovirus) and has substantial read support (24 reads), indicating a significant environmental signal.</td></tr>
+<tr><td>Human mastadenovirus F</td><td>Medium</td><td>64</td><td>stable</td><td>[LLM] Non-pathogen virus with substantial read support (64 reads). Classified as Medium risk based on substantial signal, though it does not match the high-risk pathogen list.</td></tr>
+<tr><td>Human coronavirus 229E</td><td>Medium</td><td>16</td><td>stable</td><td>[LLM] Non-pathogen virus with moderate read support (16 reads). Classified as Medium risk based on signal strength.</td></tr>
+<tr><td>assembled contig k141_8205</td><td>Medium</td><td>0</td><td>unknown</td><td>novel/divergent candidate; requires confirmatory characterisation</td></tr>
+</tbody></table>
+<p><strong>Normalization controls (not ranked as threats):</strong> Pepper mild mottle virus (41 reads — Pepper mild mottle virus (PMMoV))</p>
+<h2>AI-Assisted Interpretation</h2>
+<p>_Generated by gemma-4-E2B-it. Advisory only — the deterministic risk assessment above is authoritative; confirm all high-risk signals._</p>
+<h2>Executive Summary</h2>
+<p>The wastewater metagenomic surveillance of the Sapelo 2 site detected a high-risk viral signal, including sequences matching SARS-CoV-2 and Norwalk virus. These detections represent sequence signals in the environment, not confirmed infections or outbreaks. While the signal strength for the primary pathogens is substantial, orthogonal confirmation is required before any public health action. Other non-pathogenic viruses and novel candidates were also identified.</p>
+<h2>Risk Interpretation</h2>
+<p><strong>Severe acute respiratory syndrome-related coronavirus (High Risk):</strong> A detected sequence signal was found with 37 reads. This pathogen is a known respiratory virus with documented faecal shedding, warranting high surveillance prioritization.</p>
+<p><strong>Norwalk virus (High Risk):</strong> A significant signal was detected with 24 reads. This virus is a leading cause of gastroenteritis and is commonly shed in wastewater.</p>
+<p><strong>Human mastadenovirus F (Medium Risk):</strong> A substantial signal (64 reads) was detected. This is classified as a non-pathogen virus, but its high read count indicates a significant environmental presence.</p>
+<p><strong>Human coronavirus 229E (Medium Risk):</strong> A moderate signal (16 reads) was detected.</p>
+<p><strong>Novel Candidates:</strong> Several novel contigs were identified; these require further characterization to determine their biological significance.</p>
+<h2>Recommended Public-Health Actions</h2>
+<ul>
+<li><strong>Priority Confirmation:</strong> Immediately confirm the detection of the Severe acute respiratory syndrome-related coronavirus and Norwalk virus using targeted RT-qPCR or amplicon sequencing.</li>
+<li><strong>Contextual Analysis:</strong> Integrate these sequence signals with clinical and syndromic surveillance data before any public-health action is taken.</li>
+<li><strong>Curate Novel Sequences:</strong> Manually curate and verify novel contigs to assess their potential relevance.</li>
+</ul>
+<h2>Caveats &amp; Limitations</h2>
+<ul>
+<li><strong>Signal vs. Confirmation:</strong> All findings are detected sequence signals, not confirmed infections or outbreaks.</li>
+<li><strong>Read Count:</strong> While the top signals have adequate read support, low read counts (&lt;10) are prone to uncertainty, and all results must be treated cautiously.</li>
+<li><strong>False Positives:</strong> The analysis identified 11 potential false positives, emphasizing the need for orthogonal confirmation.</li>
+<li><strong>Data Scope:</strong> This analysis is based solely on metagenomic reads; clinical diagnosis or outbreak confirmation cannot be made from this data alone.</li>
+<li><strong>Phages:</strong> Environmental bacteriophages were detected (4 taxa); these are environmental indicators and are not considered human or animal pathogens.</li>
+</ul>
+<h2>9. Human Review</h2>
+<ul>
+<li><strong>Review required:</strong> True</li>
+<li><strong>Decision:</strong> approved</li>
+<li><strong>Approved for report:</strong> True</li>
+<li><strong>Reviewer notes:</strong> Offline 6-agent regeneration from real Sapelo2 HPC results (all tools run).</li>
+</ul>
+<h2>10. Recommended Follow-up Actions</h2>
+<ul>
+<li>Confirm Severe acute respiratory syndrome-related coronavirus (High) with targeted RT-qPCR / amplicon sequencing</li>
+<li>Confirm Norwalk virus (High) with targeted RT-qPCR / amplicon sequencing</li>
+<li>Manually curate novel/divergent candidates; verify contigs with CheckV and phylogenetics</li>
+</ul>
+<h2>11. Warnings</h2>
+<ul>
+<li>29 novel/divergent viral candidate(s) require expert review</li>
+</ul>
+<h2>12. Reproducibility</h2>
+<ul>
+<li><strong>MetaMAVS version:</strong> 0.1.0</li>
+<li><strong>Config:</strong> configs/sapelo2_config.yaml</li>
+<li><strong>Run directory:</strong> reports/sapelo2_genome72_full</li>
+<li><strong>Generated (UTC):</strong> 2026-07-11T16:16:20Z</li>
+</ul>
+<hr/>
+<p>_Generated by MetaMAVS. Detected signals require confirmatory testing._</p>
+</body>
+</html>

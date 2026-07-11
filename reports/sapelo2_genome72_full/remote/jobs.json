@@ -1,0 +1,19 @@
+{
+  "jobs": {
+    "qc": {
+      "job_id": "46930890",
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    },
+    "gottcha2": {
+      "job_id": "46930891",
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    },
+    "novel_virus": {
+      "job_id": "46930892",
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    }
+  }
+}

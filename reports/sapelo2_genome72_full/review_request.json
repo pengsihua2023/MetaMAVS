@@ -1,0 +1,52 @@
+{
+  "run_id": "run_20260710_234706",
+  "triggers": [
+    "overall risk = High",
+    "29 novel candidate(s)"
+  ],
+  "context": {
+    "overall_risk": "High",
+    "top_risks": [
+      {
+        "taxon_name": "Severe acute respiratory syndrome-related coronavirus",
+        "risk_level": "High",
+        "total_reads": 37,
+        "trend": "stable",
+        "reasons": "[LLM] Matches the high-risk pathogen list (Betacoronavirus) and has adequate read support (37 reads), warranting a High risk assessment for surveillance prioritization."
+      },
+      {
+        "taxon_name": "Norwalk virus",
+        "risk_level": "High",
+        "total_reads": 24,
+        "trend": "stable",
+        "reasons": "[LLM] Matches the high-risk pathogen list (Norovirus) and has substantial read support (24 reads), indicating a significant environmental signal."
+      },
+      {
+        "taxon_name": "Human mastadenovirus F",
+        "risk_level": "Medium",
+        "total_reads": 64,
+        "trend": "stable",
+        "reasons": "[LLM] Non-pathogen virus with substantial read support (64 reads). Classified as Medium risk based on substantial signal, though it does not match the high-risk pathogen list."
+      },
+      {
+        "taxon_name": "Human coronavirus 229E",
+        "risk_level": "Medium",
+        "total_reads": 16,
+        "trend": "stable",
+        "reasons": "[LLM] Non-pathogen virus with moderate read support (16 reads). Classified as Medium risk based on signal strength."
+      },
+      {
+        "taxon_name": "assembled contig k141_8205",
+        "risk_level": "Medium",
+        "total_reads": 0,
+        "trend": "unknown",
+        "reasons": "novel/divergent candidate; requires confirmatory characterisation"
+      }
+    ],
+    "n_novel_candidates": 29,
+    "qc_failures": [],
+    "n_warnings": 3
+  },
+  "status": "awaiting_human_review",
+  "instructions": "Approve/reject with: metamavs review --run-dir <run_dir>"
+}
