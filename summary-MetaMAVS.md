@@ -31,8 +31,10 @@ human-in-the-loop).
 
 - **Research-grade & scientifically cautious** — "detected signal", not
   "confirmed infection"; never overstates weak evidence.
-- **Deterministic & key-free by default** — six nodes become NCBI-grounded LLM
-  agents only when enabled; no cloud key is ever required to run.
+- **Deterministic & key-free by default** — six nodes optionally become LLM
+  agents when enabled (else pure deterministic). Of these, **taxonomy and risk
+  are grounded in verified NCBI Taxonomy** (queried live by taxid); the other
+  four use a curated reference. No cloud key is ever required to run.
 - **Multi-agent, not a sequential script** — a StateGraph, not a flat pipeline.
 
 ### Design principles
