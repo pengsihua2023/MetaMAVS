@@ -270,19 +270,7 @@ metamavs/
   utils/  workflows/  # logging/files/exec; local + slurm backends
 ```
 
----
 
-## Roadmap
-
-- **Phase 1** — deterministic local dry-run prototype. ✅
-- **Phase 2** — real subprocess execution, tool checks, validation, SLURM. ✅
-- **Phase 3** — hybrid local-control + HPC-execution (verified on UGA Sapelo2
-  with real GOTTCHA2). ✅
-- **Phase 4** — optional LLM agents (6), NCBI + literature grounding,
-  pause/resume human review. ✅ *(no API key required for Phases 1–3)*
-
-Possible next: multi-timepoint trend analysis, more bioinformatics tools per
-step, richer literature retrieval.
 
 ---
 
